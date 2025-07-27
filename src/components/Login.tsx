@@ -13,10 +13,16 @@ export const Login = () => {
   const handleLogin = async () => {
     setLoading(true)
     try {
+      console.log('Iniciando login con Google...')
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin + '/auth/callback'
+          redirectTo: window.location.origin + '/auth/callback',
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent'
+          }
         }
       })
       
@@ -24,7 +30,8 @@ export const Login = () => {
         throw error
       }
       
-      toast.success('¡Bienvenido a tu Hub Financiero!')
+      console.log('Login iniciado correctamente')
+      toast.success('Redirigiendo a Google...')
     } catch (error) {
       console.error('Error signing in with Google:', error)
       toast.error('Error al iniciar sesión con Google')
