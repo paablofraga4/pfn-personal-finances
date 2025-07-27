@@ -54,6 +54,9 @@ export const AddTransactionDialog = ({ open, onOpenChange }: AddTransactionDialo
   }
 
   const availableCategories = type === 'income' ? getIncomeCategories() : getExpenseCategories()
+  
+  console.log('🔍 AddTransactionDialog - Type:', type)
+  console.log('🔍 AddTransactionDialog - Available categories:', availableCategories)
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-ES', {

@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog'
 import { Badge } from './ui/badge'
 import { Plus, Minus, Euro, Calculator } from 'lucide-react'
-import { categories } from '../data/categories'
+import { categories, getIncomeCategories, getExpenseCategories } from '../data/categories'
 
 export const FloatingAddButton = () => {
   const { addTransaction, cards } = useFinance()
@@ -62,13 +62,10 @@ export const FloatingAddButton = () => {
     }
   }
 
-  const filteredCategories = categories.filter(cat => {
-    if (type === 'income') {
-      return ['salary', 'freelance', 'investment', 'gift', 'other-income'].includes(cat.id)
-    } else {
-      return !['salary', 'freelance', 'investment', 'gift', 'other-income'].includes(cat.id)
-    }
-  })
+  const filteredCategories = type === 'income' ? getIncomeCategories() : getExpenseCategories()
+  
+  console.log('🔍 FloatingAddButton - Type:', type)
+  console.log('🔍 FloatingAddButton - Filtered categories:', filteredCategories.map(c => c.name))
 
   const calculateNetFromGross = () => {
     if (grossAmount) {

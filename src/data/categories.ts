@@ -26,9 +26,14 @@ export const getCategoryById = (id: string): Category | undefined => {
 }
 
 export const getExpenseCategories = (): Category[] => {
-  return categories.filter(cat => !cat.id.includes('income') && !cat.id.includes('salary') && !cat.id.includes('work') && !cat.id.includes('freelance') && !cat.id.includes('investment') && !cat.id.includes('gift'))
+  const expenseCategories = categories.filter(cat => !cat.id.includes('income') && !cat.id.includes('salary') && !cat.id.includes('work') && !cat.id.includes('freelance') && !cat.id.includes('investment') && !cat.id.includes('gift'))
+  console.log('🔍 getExpenseCategories - Found:', expenseCategories.length, 'categories')
+  return expenseCategories
 }
 
 export const getIncomeCategories = (): Category[] => {
-  return categories.filter(cat => cat.id.includes('income') || cat.id.includes('salary') || cat.id.includes('work') || cat.id.includes('freelance') || cat.id.includes('investment') || cat.id.includes('gift'))
+  const incomeCategories = categories.filter(cat => cat.id.includes('income') || cat.id.includes('salary') || cat.id.includes('work') || cat.id.includes('freelance') || cat.id.includes('investment') || cat.id.includes('gift'))
+  console.log('🔍 getIncomeCategories - Found:', incomeCategories.length, 'categories')
+  console.log('🔍 getIncomeCategories - Categories:', incomeCategories.map(c => c.name))
+  return incomeCategories
 }
