@@ -26,7 +26,7 @@ export const FloatingAddButton = () => {
 
     setLoading(true)
     try {
-      await addTransaction({
+      console.log('📝 FloatingAddButton - Datos de transacción:', {
         amount: parseFloat(amount),
         grossAmount: grossAmount ? parseFloat(grossAmount) : undefined,
         description,
@@ -35,6 +35,18 @@ export const FloatingAddButton = () => {
         cardId: cardId || undefined,
         date: new Date().toISOString()
       })
+      
+      const result = await addTransaction({
+        amount: parseFloat(amount),
+        grossAmount: grossAmount ? parseFloat(grossAmount) : undefined,
+        description,
+        category,
+        type,
+        cardId: cardId || undefined,
+        date: new Date().toISOString()
+      })
+      
+      console.log('✅ FloatingAddButton - Transacción agregada:', result)
       
       // Reset form
       setAmount('')

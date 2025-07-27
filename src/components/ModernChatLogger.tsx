@@ -457,9 +457,13 @@ export const ModernChatLogger = () => {
       
       console.log('📝 Datos de transacción a enviar:', transactionData)
       
-      const result = await addTransaction(transactionData)
-      
-      console.log('✅ Transacción agregada exitosamente:', result)
+      try {
+        const result = await addTransaction(transactionData)
+        console.log('✅ Transacción agregada exitosamente:', result)
+      } catch (error) {
+        console.error('❌ Error en addTransaction:', error)
+        throw error
+      }
       
       // Remove transaction message and add success message
       setMessages(prev => prev.filter(msg => msg.id !== messageId))

@@ -14,9 +14,10 @@ export const categories: Category[] = [
   
   // Ingresos
   { id: 'salary', name: 'Salario', icon: '💰', color: '#22c55e' },
-  { id: 'freelance', name: 'Freelance', icon: '💻', color: '#3b82f6' },
-  { id: 'investment', name: 'Inversiones', icon: '📈', color: '#8b5cf6' },
-  { id: 'gift', name: 'Regalo', icon: '🎁', color: '#f59e0b' },
+  { id: 'work', name: 'Trabajo', icon: '💼', color: '#3b82f6' },
+  { id: 'freelance', name: 'Freelance', icon: '💻', color: '#8b5cf6' },
+  { id: 'investment', name: 'Inversiones', icon: '📈', color: '#f59e0b' },
+  { id: 'gift', name: 'Regalo', icon: '🎁', color: '#ec4899' },
   { id: 'other-income', name: 'Otros Ingresos', icon: '💵', color: '#10b981' },
 ]
 
@@ -25,9 +26,9 @@ export const getCategoryById = (id: string): Category | undefined => {
 }
 
 export const getExpenseCategories = (): Category[] => {
-  return categories.filter(cat => !cat.id.includes('income') && !cat.id.includes('salary') && !cat.id.includes('freelance') && !cat.id.includes('investment') && !cat.id.includes('gift'))
+  return categories.filter(cat => !cat.id.includes('income') && !cat.id.includes('salary') && !cat.id.includes('work') && !cat.id.includes('freelance') && !cat.id.includes('investment') && !cat.id.includes('gift'))
 }
 
 export const getIncomeCategories = (): Category[] => {
-  return categories.filter(cat => cat.id.includes('income') || cat.id.includes('salary') || cat.id.includes('freelance') || cat.id.includes('investment') || cat.id.includes('gift'))
+  return categories.filter(cat => cat.id.includes('income') || cat.id.includes('salary') || cat.id.includes('work') || cat.id.includes('freelance') || cat.id.includes('investment') || cat.id.includes('gift'))
 }
