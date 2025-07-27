@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { blink } from '../blink/client'
+import { supabase } from '../lib/supabase'
 import { Button } from './ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { Input } from './ui/input'
@@ -13,7 +13,17 @@ export const Login = () => {
   const handleLogin = async () => {
     setLoading(true)
     try {
-      await blink.auth.signInWithGoogle()
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin
+        }
+      })
+      
+      if (error) {
+        throw error
+      }
+      
       toast.success('¡Bienvenido a tu Hub Financiero!')
     } catch (error) {
       console.error('Error signing in with Google:', error)
@@ -58,7 +68,8 @@ export const Login = () => {
             <Button 
               onClick={async () => {
                 try {
-                  await blink.auth.signOut()
+                  const { error } = await supabase.auth.signOut()
+                  if (error) throw error
                   toast.success('Sesión cerrada')
                 } catch (error) {
                   console.error('Error signing out:', error)
