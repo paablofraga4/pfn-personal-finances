@@ -23,11 +23,10 @@ export const useFinance = () => {
       
       console.log('Loading data for user:', user.id)
       
-      // Verificar el estado de autenticación
-      const authState = await blink.auth.getState()
-      console.log('Auth state:', authState)
+      // Verificar el estado de autenticación - usar el estado actual en lugar de getState()
+      console.log('Auth state from context:', { user, loading })
       
-      if (!authState.user) {
+      if (!user) {
         console.log('Usuario no autenticado')
         setLoading(false)
         return
@@ -35,47 +34,29 @@ export const useFinance = () => {
       
       console.log('User is authenticated, loading data...')
       
-      // Test de conexión a la base de datos
+      // Cargar datos directamente sin verificación adicional
+      console.log('Loading data directly...')
+      
       try {
-        console.log('Testing database connection...')
-        const testQuery = await blink.db.transactions.list({ limit: 1 })
-        console.log('Database connection successful, test query result:', testQuery)
-      } catch (dbError) {
-        console.error('Database connection failed:', dbError)
-        toast.error('Error de conexión a la base de datos')
-        setLoading(false)
-        return
-      }
-      
-      // Agregar timeout para evitar bloqueos
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout')), 10000)
-      )
-      
-      const dataPromise = Promise.all([
-        blink.db.transactions.list({
-          where: { userId: user.id },
-          orderBy: { createdAt: 'desc' },
-          limit: 100
-        }).catch(() => []),
-        blink.db.cards.list({
-          where: { userId: user.id },
-          orderBy: { createdAt: 'desc' }
-        }).catch(() => []),
-        blink.db.savingsGoals.list({
-          where: { userId: user.id },
-          orderBy: { createdAt: 'desc' }
-        }).catch(() => []),
-        blink.db.monthlyExpenses.list({
-          where: { userId: user.id },
-          orderBy: { createdAt: 'desc' }
-        }).catch(() => [])
-      ])
-      
-      const [transactionsData, cardsData, savingsGoalsData, monthlyExpensesData] = await Promise.race([
-        dataPromise,
-        timeoutPromise
-      ])
+        const [transactionsData, cardsData, savingsGoalsData, monthlyExpensesData] = await Promise.all([
+          blink.db.transactions.list({
+            where: { userId: user.id },
+            orderBy: { createdAt: 'desc' },
+            limit: 100
+          }).catch(() => []),
+          blink.db.cards.list({
+            where: { userId: user.id },
+            orderBy: { createdAt: 'desc' }
+          }).catch(() => []),
+          blink.db.savingsGoals.list({
+            where: { userId: user.id },
+            orderBy: { createdAt: 'desc' }
+          }).catch(() => []),
+          blink.db.monthlyExpenses.list({
+            where: { userId: user.id },
+            orderBy: { createdAt: 'desc' }
+          }).catch(() => [])
+        ])
       
       console.log('Data loaded:', {
         transactions: transactionsData?.length || 0,
