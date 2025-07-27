@@ -7,7 +7,6 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "vercel-build": "vite build",
     "lint": "npm run lint:js && npm run lint:css",
     "preview": "vite preview",
     "lint:css": "stylelint \"**/*.css\" --fix --quiet",
