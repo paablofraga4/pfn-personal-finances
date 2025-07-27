@@ -208,7 +208,7 @@ export const useFinance = () => {
         category: transaction.category,
         card_id: transaction.cardId,
         gross_amount: transaction.grossAmount,
-        date: transaction.date,
+        date: transaction.date || new Date().toISOString(),
         user_id: user.id,
         created_at: new Date().toISOString()
       }

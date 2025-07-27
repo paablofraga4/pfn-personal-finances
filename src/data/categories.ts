@@ -27,15 +27,19 @@ export const getCategoryById = (id: string): Category | undefined => {
   return categories.find(cat => cat.id === id)
 }
 
+// Log todas las categorías disponibles para debugging
+console.log('🔍 All categories available:', categories.map(c => `${c.name} (${c.id})`))
+
 export const getExpenseCategories = (): Category[] => {
   const expenseCategories = categories.filter(cat => !cat.id.includes('income') && !cat.id.includes('salary') && !cat.id.includes('freelance') && !cat.id.includes('gift'))
-  console.log('🔍 getExpenseCategories - Found:', expenseCategories.length, 'categories')
+  console.log('🔍 getExpenseCategories - Found:', expenseCategories.length, 'categories at', new Date().toISOString())
+  console.log('🔍 getExpenseCategories - Categories:', expenseCategories.map(c => c.name))
   return expenseCategories
 }
 
 export const getIncomeCategories = (): Category[] => {
   const incomeCategories = categories.filter(cat => cat.id.includes('income') || cat.id.includes('salary') || cat.id.includes('freelance') || cat.id.includes('gift'))
-  console.log('🔍 getIncomeCategories - Found:', incomeCategories.length, 'categories')
+  console.log('🔍 getIncomeCategories - Found:', incomeCategories.length, 'categories at', new Date().toISOString())
   console.log('🔍 getIncomeCategories - Categories:', incomeCategories.map(c => c.name))
   return incomeCategories
 }
