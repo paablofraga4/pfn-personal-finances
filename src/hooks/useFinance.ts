@@ -70,10 +70,54 @@ export const useFinance = () => {
       if (savingsGoalsResult.error) console.error('Error loading savings goals:', savingsGoalsResult.error)
       if (monthlyExpensesResult.error) console.error('Error loading monthly expenses:', monthlyExpensesResult.error)
       
-      setTransactions(transactionsResult.data || [])
-      setCards(cardsResult.data || [])
-      setSavingsGoals(savingsGoalsResult.data || [])
-      setMonthlyExpenses(monthlyExpensesResult.data || [])
+      // Convertir datos de snake_case a camelCase
+      const convertedTransactions = (transactionsResult.data || []).map(t => ({
+        id: t.id,
+        description: t.description,
+        amount: t.amount,
+        type: t.type,
+        category: t.category,
+        cardId: t.card_id,
+        grossAmount: t.gross_amount,
+        userId: t.user_id,
+        createdAt: t.created_at
+      }))
+      
+      const convertedCards = (cardsResult.data || []).map(c => ({
+        id: c.id,
+        name: c.name,
+        type: c.type,
+        lastFourDigits: c.last_four_digits,
+        limit: c.limit_amount,
+        userId: c.user_id,
+        createdAt: c.created_at
+      }))
+      
+      const convertedSavingsGoals = (savingsGoalsResult.data || []).map(s => ({
+        id: s.id,
+        name: s.name,
+        targetAmount: s.target_amount,
+        currentAmount: s.current_amount,
+        targetDate: s.target_date,
+        userId: s.user_id,
+        createdAt: s.created_at
+      }))
+      
+      const convertedMonthlyExpenses = (monthlyExpensesResult.data || []).map(m => ({
+        id: m.id,
+        name: m.name,
+        amount: m.amount,
+        category: m.category,
+        dayOfMonth: m.day_of_month,
+        isActive: m.is_active,
+        userId: m.user_id,
+        createdAt: m.created_at
+      }))
+      
+      setTransactions(convertedTransactions)
+      setCards(convertedCards)
+      setSavingsGoals(convertedSavingsGoals)
+      setMonthlyExpenses(convertedMonthlyExpenses)
     } catch (error) {
       console.error('Error loading data:', error)
       if (process.env.NODE_ENV === 'development') {
@@ -129,43 +173,53 @@ export const useFinance = () => {
       console.log('=== ADDING TRANSACTION ===')
       console.log('Transaction data:', { ...transaction, userId: user.id })
       console.log('User ID:', user?.id)
-      console.log('User object:', user)
       
-      // Verificar que la tabla existe
-      console.log('Checking if transactions table exists...')
+      // Estructura de datos para Supabase (snake_case)
+      const transactionData = {
+        description: transaction.description,
+        amount: transaction.amount,
+        type: transaction.type,
+        category: transaction.category,
+        card_id: transaction.cardId,
+        gross_amount: transaction.grossAmount,
+        user_id: user.id,
+        created_at: new Date().toISOString()
+      }
       
-      const newTransaction = await blink.db.transactions.create({
-        ...transaction,
-        grossAmount: transaction.grossAmount,
-        userId: user.id,
-        createdAt: new Date().toISOString()
-      })
+      console.log('📤 Attempting to create transaction with Supabase:', transactionData)
       
-      console.log('✅ Transaction created successfully:', newTransaction)
-      console.log('Previous transactions count:', transactions.length)
-      setTransactions(prev => {
-        const newList = [newTransaction, ...prev]
-        console.log('New transactions count:', newList.length)
-        return newList
-      })
+      // Crear en Supabase
+      const { data: newTransaction, error } = await supabase
+        .from('transactions')
+        .insert(transactionData)
+        .select()
+        .single()
       
-      // Verificar que se guardó correctamente
-      setTimeout(async () => {
-        try {
-          console.log('🔍 Verificando que la transacción se guardó...')
-          const savedTransactions = await blink.db.transactions.list({
-            where: { userId: user.id },
-            orderBy: { createdAt: 'desc' },
-            limit: 5
-          })
-          console.log('📊 Transacciones guardadas:', savedTransactions)
-        } catch (error) {
-          console.error('❌ Error verificando transacciones:', error)
-        }
-      }, 1000)
+      if (error) {
+        console.error('❌ Error creating transaction in database:', error)
+        toast.error('Error al agregar la transacción')
+        throw error
+      }
+      
+      console.log('✅ Transaction created successfully in database:', newTransaction)
+      
+      // Convertir de snake_case a camelCase para el frontend
+      const convertedTransaction = {
+        id: newTransaction.id,
+        description: newTransaction.description,
+        amount: newTransaction.amount,
+        type: newTransaction.type,
+        category: newTransaction.category,
+        cardId: newTransaction.card_id,
+        grossAmount: newTransaction.gross_amount,
+        userId: newTransaction.user_id,
+        createdAt: newTransaction.created_at
+      }
+      
+      setTransactions(prev => [convertedTransaction, ...prev])
       
       toast.success('Transacción agregada correctamente')
-      return newTransaction
+      return convertedTransaction
     } catch (error) {
       console.error('Error adding transaction:', error)
       console.error('Transaction data:', transaction)
@@ -331,73 +385,50 @@ export const useFinance = () => {
     try {
       console.log('=== ADDING MONTHLY EXPENSE ===')
       
-      // Estructura de datos ultra-simple para monthly expenses
-      const simpleExpenseData = {
+      // Estructura de datos para Supabase (snake_case)
+      const expenseData = {
         name: expense.name,
         amount: expense.amount,
         category: expense.category,
-        dayOfMonth: expense.dayOfMonth,
-        isActive: expense.isActive,
-        userId: user.id,
-        createdAt: new Date().toISOString()
+        day_of_month: expense.dayOfMonth,
+        is_active: expense.isActive,
+        user_id: user.id,
+        created_at: new Date().toISOString()
       }
       
-      try {
-        console.log('📤 Attempting to create monthly expense with simple structure:', simpleExpenseData)
-        
-        const newExpense = await blink.db.monthlyExpenses.create(simpleExpenseData)
-        
-        console.log('✅ Monthly expense created successfully in database:', newExpense)
-        setMonthlyExpenses(prev => [newExpense, ...prev])
-        
-        toast.success('Gasto mensual agregado correctamente')
-        return newExpense
-      } catch (dbError) {
-        console.error('❌ Database creation failed:', dbError.message)
-        console.log('🔧 This might be because the monthly_expenses table doesn\'t exist')
-        
-        // Intentar crear la tabla primero
-        try {
-          console.log('🔧 Attempting to create monthly_expenses table...')
-          // Intentar crear un registro de prueba para forzar la creación de la tabla
-          await blink.db.monthlyExpenses.create({
-            name: 'Test Monthly Expense',
-            amount: 0,
-            category: 'otros',
-            dayOfMonth: 1,
-            isActive: true,
-            userId: user.id,
-            createdAt: new Date().toISOString()
-          })
-          console.log('✅ Monthly expenses table might have been created')
-          
-          // Ahora intentar crear el gasto real
-          const newExpense = await blink.db.monthlyExpenses.create(simpleExpenseData)
-          console.log('✅ Monthly expense created successfully after table creation:', newExpense)
-          
-          setMonthlyExpenses(prev => [newExpense, ...prev])
-          
-          toast.success('Gasto mensual agregado correctamente')
-          return newExpense
-        } catch (tableError) {
-          console.error('❌ Table creation also failed:', tableError.message)
-          
-          // Fallback local definitivo
-          console.error('❌ Using local fallback - monthly_expenses table not available')
-          
-          const tempId = `temp_${Date.now()}`
-          const localExpense = {
-            id: tempId,
-            ...simpleExpenseData
-          }
-          
-          console.log('✅ Monthly expense created locally:', localExpense)
-          setMonthlyExpenses(prev => [localExpense, ...prev])
-          
-          toast.success('Gasto mensual agregado (guardada localmente)')
-          return localExpense
-        }
+      console.log('📤 Attempting to create monthly expense with Supabase:', expenseData)
+      
+      // Crear en Supabase
+      const { data: newExpense, error } = await supabase
+        .from('monthly_expenses')
+        .insert(expenseData)
+        .select()
+        .single()
+      
+      if (error) {
+        console.error('❌ Error creating monthly expense in database:', error)
+        toast.error('Error al agregar el gasto mensual')
+        throw error
       }
+      
+      console.log('✅ Monthly expense created successfully in database:', newExpense)
+      
+      // Convertir de snake_case a camelCase para el frontend
+      const convertedExpense = {
+        id: newExpense.id,
+        name: newExpense.name,
+        amount: newExpense.amount,
+        category: newExpense.category,
+        dayOfMonth: newExpense.day_of_month,
+        isActive: newExpense.is_active,
+        userId: newExpense.user_id,
+        createdAt: newExpense.created_at
+      }
+      
+      setMonthlyExpenses(prev => [convertedExpense, ...prev])
+      
+      toast.success('Gasto mensual agregado correctamente')
+      return convertedExpense
     } catch (error) {
       console.error('Error adding monthly expense:', error)
       toast.error('Error al agregar el gasto mensual')
