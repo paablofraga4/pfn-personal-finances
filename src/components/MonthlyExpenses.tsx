@@ -116,14 +116,14 @@ export const MonthlyExpenses = () => {
               Agregar Gasto Mensual
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px]">
+          <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-xl font-bold">Agregar Gasto Mensual</DialogTitle>
             </DialogHeader>
             
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-6">
               {/* Name */}
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <Label htmlFor="name" className="text-sm font-medium">Nombre del Gasto</Label>
                 <Input
                   id="name"
@@ -131,12 +131,12 @@ export const MonthlyExpenses = () => {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
-                  className="h-12"
+                  className="h-14 text-base"
                 />
               </div>
 
               {/* Amount */}
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <Label htmlFor="amount" className="text-sm font-medium">Cantidad Mensual</Label>
                 <div className="relative">
                   <Input
@@ -147,19 +147,19 @@ export const MonthlyExpenses = () => {
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
                     required
-                    className="h-12 text-lg font-medium pr-8"
+                    className="h-14 text-lg font-medium pr-8"
                   />
-                  <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">
+                  <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-muted-foreground text-lg">
                     €
                   </span>
                 </div>
               </div>
 
               {/* Category */}
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <Label htmlFor="category" className="text-sm font-medium">Categoría</Label>
                 <Select value={category} onValueChange={setCategory} required>
-                  <SelectTrigger className="h-12">
+                  <SelectTrigger className="h-14">
                     <SelectValue placeholder="Selecciona una categoría" />
                   </SelectTrigger>
                   <SelectContent>
@@ -176,13 +176,13 @@ export const MonthlyExpenses = () => {
               </div>
 
               {/* Card Selection */}
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <Label htmlFor="card" className="text-sm font-medium flex items-center gap-2">
                   <CreditCard className="h-4 w-4" />
                   Tarjeta (Opcional)
                 </Label>
                 <Select value={cardId} onValueChange={setCardId}>
-                  <SelectTrigger className="h-12">
+                  <SelectTrigger className="h-14">
                     <SelectValue placeholder="Selecciona una tarjeta" />
                   </SelectTrigger>
                   <SelectContent>
@@ -209,7 +209,7 @@ export const MonthlyExpenses = () => {
               </div>
 
               {/* Day of Month */}
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <Label htmlFor="dayOfMonth" className="text-sm font-medium flex items-center gap-2">
                   <Calendar className="h-4 w-4" />
                   Día del Mes
@@ -223,24 +223,24 @@ export const MonthlyExpenses = () => {
                   value={dayOfMonth}
                   onChange={(e) => setDayOfMonth(e.target.value)}
                   required
-                  className="h-12"
+                  className="h-14 text-base"
                 />
               </div>
 
               {/* Description */}
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <Label htmlFor="description" className="text-sm font-medium">Descripción (Opcional)</Label>
                 <Input
                   id="description"
                   placeholder="Notas adicionales..."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="h-12"
+                  className="h-14 text-base"
                 />
               </div>
 
               {/* Active Switch */}
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between py-2">
                 <Label htmlFor="isActive" className="text-sm font-medium">Activo</Label>
                 <Switch
                   id="isActive"
@@ -250,19 +250,19 @@ export const MonthlyExpenses = () => {
               </div>
 
               {/* Submit Button */}
-              <div className="flex justify-end gap-3 pt-4">
+              <div className="flex justify-end gap-4 pt-6 border-t">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => setShowAddExpense(false)}
-                  className="h-12 px-6"
+                  className="h-14 px-8 text-base"
                 >
                   Cancelar
                 </Button>
                 <Button 
                   type="submit" 
                   disabled={loading}
-                  className="h-12 px-8 gradient-primary text-white shadow-glow"
+                  className="h-14 px-10 gradient-primary text-white shadow-glow text-base font-medium"
                 >
                   {loading ? 'Agregando...' : 'Agregar Gasto Mensual'}
                 </Button>
