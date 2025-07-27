@@ -13,16 +13,15 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { categories, getExpenseCategories } from '../data/categories'
 
 export const MonthlyExpenses = () => {
-  try {
-    const { monthlyExpenses, cards, addMonthlyExpense, updateMonthlyExpense, deleteMonthlyExpense, getCurrentMonthExpenses } = useFinance()
-    const [showAddExpense, setShowAddExpense] = useState(false)
-    const [loading, setLoading] = useState(false)
+  const { monthlyExpenses, cards, addMonthlyExpense, updateMonthlyExpense, deleteMonthlyExpense, getCurrentMonthExpenses } = useFinance()
+  const [showAddExpense, setShowAddExpense] = useState(false)
+  const [loading, setLoading] = useState(false)
   
   // Form state
   const [name, setName] = useState('')
   const [amount, setAmount] = useState('')
   const [category, setCategory] = useState('')
-  const [cardId, setCardId] = useState('')
+  const [cardId, setCardId] = useState('none')
   const [dayOfMonth, setDayOfMonth] = useState('')
   const [description, setDescription] = useState('')
   const [isActive, setIsActive] = useState(true)
@@ -54,7 +53,7 @@ export const MonthlyExpenses = () => {
         name,
         amount: parseFloat(amount),
         category,
-        cardId: cardId || undefined,
+        cardId: cardId === 'none' ? undefined : cardId || undefined,
         dayOfMonth: parseInt(dayOfMonth),
         isActive,
         description: description || undefined
@@ -64,7 +63,7 @@ export const MonthlyExpenses = () => {
       setName('')
       setAmount('')
       setCategory('')
-      setCardId('')
+      setCardId('none')
       setDayOfMonth('')
       setDescription('')
       setIsActive(true)
@@ -187,7 +186,7 @@ export const MonthlyExpenses = () => {
                     <SelectValue placeholder="Selecciona una tarjeta" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">
+                    <SelectItem value="none">
                       <div className="flex items-center gap-3">
                         <span className="text-lg">💳</span>
                         <span>Sin tarjeta</span>
@@ -398,24 +397,4 @@ export const MonthlyExpenses = () => {
       )}
     </div>
   )
-  } catch (error) {
-    console.error('Error in MonthlyExpenses component:', error)
-    return (
-      <div className="space-y-6">
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <AlertCircle className="h-16 w-16 text-destructive mb-4" />
-            <h3 className="text-lg font-medium mb-2">Error al cargar gastos mensuales</h3>
-            <p className="text-muted-foreground text-center mb-4">
-              Ha ocurrido un error inesperado. Intenta recargar la página.
-            </p>
-            <Button onClick={() => window.location.reload()} className="flex items-center gap-2 gradient-primary text-white shadow-glow">
-              <RefreshCw className="h-4 w-4" />
-              Recargar Página
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
 } 
