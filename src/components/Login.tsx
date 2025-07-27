@@ -13,11 +13,11 @@ export const Login = () => {
   const handleLogin = async () => {
     setLoading(true)
     try {
-      await blink.auth.signInAnonymously()
+      await blink.auth.signInWithGoogle()
       toast.success('¡Bienvenido a tu Hub Financiero!')
     } catch (error) {
-      console.error('Error signing in:', error)
-      toast.error('Error al iniciar sesión')
+      console.error('Error signing in with Google:', error)
+      toast.error('Error al iniciar sesión con Google')
     } finally {
       setLoading(false)
     }
@@ -51,7 +51,7 @@ export const Login = () => {
                   Iniciando sesión...
                 </>
               ) : (
-                'Comenzar'
+                'Iniciar sesión con Google'
               )}
             </Button>
           </div>

@@ -34,10 +34,9 @@ function App() {
     )
   }
 
-  // Comentar la verificación de usuario para permitir acceso sin autenticación
-  // if (!user) {
-  //   return <Login />
-  // }
+  if (!user) {
+    return <Login />
+  }
 
 
 
