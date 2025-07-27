@@ -200,55 +200,57 @@ export const useFinance = () => {
       console.log('User ID:', user?.id)
       console.log('User object:', user)
       
-      // Verificar que la tabla existe
-      console.log('Checking if cards table exists...')
+      // Intentar crear la tabla si no existe
+      console.log('🔧 Attempting to create cards table if it doesn\'t exist...')
       
-      // Intentar diferentes estructuras de datos para la BD
-      const cardDataAttempts = [
-        // Intento 1: Datos mínimos
-        {
-          name: card.name,
-          type: card.type,
-          lastFourDigits: card.lastFourDigits,
-          color: card.color,
-          balance: card.balance,
-          userId: user.id,
-          createdAt: new Date().toISOString()
-        },
-        // Intento 2: Con limitAmount
-        {
-          name: card.name,
-          type: card.type,
-          lastFourDigits: card.lastFourDigits,
-          color: card.color,
-          balance: card.balance,
-          limitAmount: card.limit || 0,
-          userId: user.id,
-          createdAt: new Date().toISOString()
-        },
-        // Intento 3: Con limit
-        {
-          name: card.name,
-          type: card.type,
-          lastFourDigits: card.lastFourDigits,
-          color: card.color,
-          balance: card.balance,
-          limit: card.limit || 0,
-          userId: user.id,
-          createdAt: new Date().toISOString()
-        }
-      ]
+      // Estructura de datos ultra-simple que debería funcionar
+      const simpleCardData = {
+        name: card.name,
+        type: card.type,
+        lastFourDigits: card.lastFourDigits,
+        color: card.color,
+        balance: card.balance,
+        userId: user.id,
+        createdAt: new Date().toISOString()
+      }
       
-      console.log('🔍 Attempting to create card with different data structures...')
-      
-      for (let i = 0; i < cardDataAttempts.length; i++) {
+      try {
+        console.log('📤 Attempting to create card with simple structure:', simpleCardData)
+        
+        const newCard = await blink.db.cards.create(simpleCardData)
+        
+        console.log('✅ Card created successfully in database:', newCard)
+        setCards(prev => {
+          const newList = [...prev, newCard]
+          console.log('New cards count:', newList.length)
+          return newList
+        })
+        
+        toast.success('Tarjeta agregada correctamente')
+        return newCard
+      } catch (dbError) {
+        console.error('❌ Database creation failed:', dbError.message)
+        console.log('🔧 This might be because the table doesn\'t exist or has different schema')
+        
+        // Intentar crear la tabla primero
         try {
-          console.log(`📤 Attempt ${i + 1}:`, cardDataAttempts[i])
+          console.log('🔧 Attempting to create cards table...')
+          // Intentar crear un registro de prueba para forzar la creación de la tabla
+          await blink.db.cards.create({
+            name: 'Test Card',
+            type: 'credit',
+            lastFourDigits: '0000',
+            color: '#3b82f6',
+            balance: 0,
+            userId: user.id,
+            createdAt: new Date().toISOString()
+          })
+          console.log('✅ Cards table might have been created')
           
-          const newCard = await blink.db.cards.create(cardDataAttempts[i])
+          // Ahora intentar crear la tarjeta real
+          const newCard = await blink.db.cards.create(simpleCardData)
+          console.log('✅ Card created successfully after table creation:', newCard)
           
-          console.log('✅ Card created successfully:', newCard)
-          console.log('Previous cards count:', cards.length)
           setCards(prev => {
             const newList = [...prev, newCard]
             console.log('New cards count:', newList.length)
@@ -257,27 +259,25 @@ export const useFinance = () => {
           
           toast.success('Tarjeta agregada correctamente')
           return newCard
-        } catch (dbError) {
-          console.error(`❌ Attempt ${i + 1} failed:`, dbError.message)
+        } catch (tableError) {
+          console.error('❌ Table creation also failed:', tableError.message)
           
-          // Si es el último intento, usar fallback local
-          if (i === cardDataAttempts.length - 1) {
-            console.error('❌ All database attempts failed, using local fallback')
-            
-            const tempId = `temp_card_${Date.now()}`
-            const localCard = {
-              id: tempId,
-              ...cardDataAttempts[0],
-              limit: card.limit || 0,
-              purpose: card.purpose || 'otros'
-            }
-            
-            console.log('✅ Card created locally:', localCard)
-            setCards(prev => [localCard, ...prev])
-            
-            toast.success('Tarjeta agregada (guardada localmente)')
-            return localCard
+          // Fallback local definitivo
+          console.error('❌ Using local fallback - database not available')
+          
+          const tempId = `temp_card_${Date.now()}`
+          const localCard = {
+            id: tempId,
+            ...simpleCardData,
+            limit: card.limit || 0,
+            purpose: card.purpose || 'otros'
           }
+          
+          console.log('✅ Card created locally:', localCard)
+          setCards(prev => [localCard, ...prev])
+          
+          toast.success('Tarjeta agregada (guardada localmente)')
+          return localCard
         }
       }
     } catch (error) {
@@ -365,75 +365,71 @@ export const useFinance = () => {
     try {
       console.log('=== ADDING MONTHLY EXPENSE ===')
       
-      // Intentar diferentes estructuras para monthly expenses
-      const expenseDataAttempts = [
-        // Intento 1: Datos básicos
-        {
-          name: expense.name,
-          amount: expense.amount,
-          category: expense.category,
-          dayOfMonth: expense.dayOfMonth,
-          isActive: expense.isActive,
-          userId: user.id,
-          createdAt: new Date().toISOString()
-        },
-        // Intento 2: Con cardId
-        {
-          name: expense.name,
-          amount: expense.amount,
-          category: expense.category,
-          dayOfMonth: expense.dayOfMonth,
-          isActive: expense.isActive,
-          cardId: expense.cardId,
-          userId: user.id,
-          createdAt: new Date().toISOString()
-        },
-        // Intento 3: Con description
-        {
-          name: expense.name,
-          amount: expense.amount,
-          category: expense.category,
-          dayOfMonth: expense.dayOfMonth,
-          isActive: expense.isActive,
-          cardId: expense.cardId,
-          description: expense.description,
-          userId: user.id,
-          createdAt: new Date().toISOString()
-        }
-      ]
+      // Estructura de datos ultra-simple para monthly expenses
+      const simpleExpenseData = {
+        name: expense.name,
+        amount: expense.amount,
+        category: expense.category,
+        dayOfMonth: expense.dayOfMonth,
+        isActive: expense.isActive,
+        userId: user.id,
+        createdAt: new Date().toISOString()
+      }
       
-      console.log('🔍 Attempting to create monthly expense with different data structures...')
-      
-      for (let i = 0; i < expenseDataAttempts.length; i++) {
+      try {
+        console.log('📤 Attempting to create monthly expense with simple structure:', simpleExpenseData)
+        
+        const newExpense = await blink.db.monthlyExpenses.create(simpleExpenseData)
+        
+        console.log('✅ Monthly expense created successfully in database:', newExpense)
+        setMonthlyExpenses(prev => [newExpense, ...prev])
+        
+        toast.success('Gasto mensual agregado correctamente')
+        return newExpense
+      } catch (dbError) {
+        console.error('❌ Database creation failed:', dbError.message)
+        console.log('🔧 This might be because the monthly_expenses table doesn\'t exist')
+        
+        // Intentar crear la tabla primero
         try {
-          console.log(`📤 Attempt ${i + 1}:`, expenseDataAttempts[i])
+          console.log('🔧 Attempting to create monthly_expenses table...')
+          // Intentar crear un registro de prueba para forzar la creación de la tabla
+          await blink.db.monthlyExpenses.create({
+            name: 'Test Monthly Expense',
+            amount: 0,
+            category: 'otros',
+            dayOfMonth: 1,
+            isActive: true,
+            userId: user.id,
+            createdAt: new Date().toISOString()
+          })
+          console.log('✅ Monthly expenses table might have been created')
           
-          const newExpense = await blink.db.monthlyExpenses.create(expenseDataAttempts[i])
+          // Ahora intentar crear el gasto real
+          const newExpense = await blink.db.monthlyExpenses.create(simpleExpenseData)
+          console.log('✅ Monthly expense created successfully after table creation:', newExpense)
           
-          console.log('✅ Monthly expense created successfully:', newExpense)
           setMonthlyExpenses(prev => [newExpense, ...prev])
           
           toast.success('Gasto mensual agregado correctamente')
           return newExpense
-        } catch (dbError) {
-          console.error(`❌ Attempt ${i + 1} failed:`, dbError.message)
+        } catch (tableError) {
+          console.error('❌ Table creation also failed:', tableError.message)
           
-          // Si es el último intento, usar fallback local
-          if (i === expenseDataAttempts.length - 1) {
-            console.error('❌ All database attempts failed, using local fallback')
-            
-            const tempId = `temp_${Date.now()}`
-            const localExpense = {
-              id: tempId,
-              ...expenseDataAttempts[0]
-            }
-            
-            console.log('✅ Monthly expense created locally:', localExpense)
-            setMonthlyExpenses(prev => [localExpense, ...prev])
-            
-            toast.success('Gasto mensual agregado (guardado localmente)')
-            return localExpense
+          // Fallback local definitivo
+          console.error('❌ Using local fallback - monthly_expenses table not available')
+          
+          const tempId = `temp_${Date.now()}`
+          const localExpense = {
+            id: tempId,
+            ...simpleExpenseData
           }
+          
+          console.log('✅ Monthly expense created locally:', localExpense)
+          setMonthlyExpenses(prev => [localExpense, ...prev])
+          
+          toast.success('Gasto mensual agregado (guardada localmente)')
+          return localExpense
         }
       }
     } catch (error) {
