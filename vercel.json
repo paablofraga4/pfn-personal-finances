@@ -1,8 +1,5 @@
 {
-  "rewrites": [
-    {
-      "source": "/auth/callback",
-      "destination": "/auth/callback.html"
-    }
-  ]
+  "framework": "vite",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist"
 } 
