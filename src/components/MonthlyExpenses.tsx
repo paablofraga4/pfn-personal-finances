@@ -8,14 +8,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog'
 import { Badge } from './ui/badge'
 import { Switch } from './ui/switch'
-import { Plus, Calendar, CreditCard, Trash2, Edit, AlertCircle } from 'lucide-react'
+import { Plus, Calendar, CreditCard, Trash2, Edit, AlertCircle, RefreshCw } from 'lucide-react'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog'
 import { categories, getExpenseCategories } from '../data/categories'
 
 export const MonthlyExpenses = () => {
-  const { monthlyExpenses, cards, addMonthlyExpense, updateMonthlyExpense, deleteMonthlyExpense, getCurrentMonthExpenses } = useFinance()
-  const [showAddExpense, setShowAddExpense] = useState(false)
-  const [loading, setLoading] = useState(false)
+  try {
+    const { monthlyExpenses, cards, addMonthlyExpense, updateMonthlyExpense, deleteMonthlyExpense, getCurrentMonthExpenses } = useFinance()
+    const [showAddExpense, setShowAddExpense] = useState(false)
+    const [loading, setLoading] = useState(false)
   
   // Form state
   const [name, setName] = useState('')
@@ -39,6 +40,16 @@ export const MonthlyExpenses = () => {
 
     setLoading(true)
     try {
+      console.log('Submitting monthly expense form:', {
+        name,
+        amount: parseFloat(amount),
+        category,
+        cardId: cardId || undefined,
+        dayOfMonth: parseInt(dayOfMonth),
+        isActive,
+        description: description || undefined
+      })
+      
       await addMonthlyExpense({
         name,
         amount: parseFloat(amount),
@@ -60,6 +71,15 @@ export const MonthlyExpenses = () => {
       setShowAddExpense(false)
     } catch (error) {
       console.error('Error adding monthly expense:', error)
+      console.error('Form data:', {
+        name,
+        amount,
+        category,
+        cardId,
+        dayOfMonth,
+        isActive,
+        description
+      })
     } finally {
       setLoading(false)
     }
@@ -378,4 +398,24 @@ export const MonthlyExpenses = () => {
       )}
     </div>
   )
+  } catch (error) {
+    console.error('Error in MonthlyExpenses component:', error)
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <AlertCircle className="h-16 w-16 text-destructive mb-4" />
+            <h3 className="text-lg font-medium mb-2">Error al cargar gastos mensuales</h3>
+            <p className="text-muted-foreground text-center mb-4">
+              Ha ocurrido un error inesperado. Intenta recargar la página.
+            </p>
+            <Button onClick={() => window.location.reload()} className="flex items-center gap-2 gradient-primary text-white shadow-glow">
+              <RefreshCw className="h-4 w-4" />
+              Recargar Página
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 } 

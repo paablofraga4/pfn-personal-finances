@@ -94,6 +94,8 @@ export const useFinance = () => {
 
   const addTransaction = async (transaction: Omit<Transaction, 'id' | 'userId' | 'createdAt'>) => {
     try {
+      console.log('Adding transaction:', { ...transaction, userId: user.id })
+      
       const newTransaction = await blink.db.transactions.create({
         ...transaction,
         grossAmount: transaction.grossAmount,
@@ -101,11 +103,14 @@ export const useFinance = () => {
         createdAt: new Date().toISOString()
       })
       
+      console.log('Transaction created successfully:', newTransaction)
       setTransactions(prev => [newTransaction, ...prev])
       toast.success('Transacción agregada correctamente')
       return newTransaction
     } catch (error) {
       console.error('Error adding transaction:', error)
+      console.error('Transaction data:', transaction)
+      console.error('User ID:', user?.id)
       toast.error('Error al agregar la transacción')
       throw error
     }
@@ -195,17 +200,22 @@ export const useFinance = () => {
   // Nuevas funciones para gastos mensuales
   const addMonthlyExpense = async (expense: Omit<MonthlyExpense, 'id' | 'userId' | 'createdAt'>) => {
     try {
+      console.log('Adding monthly expense:', { ...expense, userId: user.id })
+      
       const newExpense = await blink.db.monthlyExpenses.create({
         ...expense,
         userId: user.id,
         createdAt: new Date().toISOString()
       })
       
+      console.log('Monthly expense created successfully:', newExpense)
       setMonthlyExpenses(prev => [...prev, newExpense])
       toast.success('Gasto mensual agregado correctamente')
       return newExpense
     } catch (error) {
       console.error('Error adding monthly expense:', error)
+      console.error('Expense data:', expense)
+      console.error('User ID:', user?.id)
       toast.error('Error al agregar el gasto mensual')
       throw error
     }
