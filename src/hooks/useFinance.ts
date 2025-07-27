@@ -57,27 +57,27 @@ export const useFinance = () => {
             orderBy: { createdAt: 'desc' }
           }).catch(() => [])
         ])
-      
-      console.log('Data loaded:', {
-        transactions: transactionsData?.length || 0,
-        cards: cardsData?.length || 0,
-        savingsGoals: savingsGoalsData?.length || 0,
-        monthlyExpenses: monthlyExpensesData?.length || 0
-      })
-      
-      setTransactions(transactionsData || [])
-      setCards(cardsData || [])
-      setSavingsGoals(savingsGoalsData || [])
-      setMonthlyExpenses(monthlyExpensesData || [])
-    } catch (error) {
-      console.error('Error loading data:', error)
-      // En producción, no mostrar errores de red
-      if (process.env.NODE_ENV === 'development') {
-        toast.error('Error al cargar los datos')
+        
+        console.log('Data loaded:', {
+          transactions: transactionsData?.length || 0,
+          cards: cardsData?.length || 0,
+          savingsGoals: savingsGoalsData?.length || 0,
+          monthlyExpenses: monthlyExpensesData?.length || 0
+        })
+        
+        setTransactions(transactionsData || [])
+        setCards(cardsData || [])
+        setSavingsGoals(savingsGoalsData || [])
+        setMonthlyExpenses(monthlyExpensesData || [])
+      } catch (error) {
+        console.error('Error loading data:', error)
+        // En producción, no mostrar errores de red
+        if (process.env.NODE_ENV === 'development') {
+          toast.error('Error al cargar los datos')
+        }
+      } finally {
+        setLoading(false)
       }
-    } finally {
-      setLoading(false)
-    }
   }, [user?.id])
 
   useEffect(() => {
