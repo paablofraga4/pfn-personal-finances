@@ -116,10 +116,13 @@ export const CardsManager = () => {
               Agregar Tarjeta
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent className="sm:max-w-[425px]" aria-describedby="card-form-description">
             <DialogHeader>
               <DialogTitle>Agregar Nueva Tarjeta</DialogTitle>
             </DialogHeader>
+            <div id="card-form-description" className="sr-only">
+              Formulario para agregar una nueva tarjeta de crédito o débito
+            </div>
             
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Name */}

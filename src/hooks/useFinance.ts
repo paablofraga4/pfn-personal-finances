@@ -42,19 +42,31 @@ export const useFinance = () => {
           where: { userId: user.id },
           orderBy: { createdAt: 'desc' },
           limit: 100
-        }).catch(() => []),
+        }).catch((error) => {
+          console.error('Error loading transactions:', error)
+          return []
+        }),
         blink.db.cards.list({
           where: { userId: user.id },
           orderBy: { createdAt: 'desc' }
-        }).catch(() => []),
+        }).catch((error) => {
+          console.error('Error loading cards:', error)
+          return []
+        }),
         blink.db.savingsGoals.list({
           where: { userId: user.id },
           orderBy: { createdAt: 'desc' }
-        }).catch(() => []),
+        }).catch((error) => {
+          console.error('Error loading savings goals:', error)
+          return []
+        }),
         blink.db.monthlyExpenses.list({
           where: { userId: user.id },
           orderBy: { createdAt: 'desc' }
-        }).catch(() => [])
+        }).catch((error) => {
+          console.error('Error loading monthly expenses:', error)
+          return []
+        })
       ])
       
       console.log('Data loaded:', {
@@ -171,13 +183,24 @@ export const useFinance = () => {
       // Verificar que la tabla existe
       console.log('Checking if cards table exists...')
       
-      const newCard = await blink.db.cards.create({
-        ...card,
-        limit: card.limit,
-        limitAmount: card.limit,
+      // Simplificar los datos para evitar conflictos
+      const cardData = {
+        name: card.name,
+        type: card.type,
+        lastFourDigits: card.lastFourDigits,
+        color: card.color,
+        balance: card.balance,
+        purpose: card.purpose,
         userId: user.id,
         createdAt: new Date().toISOString()
-      })
+      }
+      
+      // Solo añadir limit si existe
+      if (card.limit) {
+        cardData.limit = card.limit
+      }
+      
+      const newCard = await blink.db.cards.create(cardData)
       
       console.log('✅ Card created successfully:', newCard)
       console.log('Previous cards count:', cards.length)

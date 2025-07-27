@@ -116,10 +116,13 @@ export const MonthlyExpenses = () => {
               Agregar Gasto Mensual
             </Button>
           </DialogTrigger>
-          <DialogContent className="w-[95vw] max-w-[600px] max-h-[95vh] overflow-y-auto sm:max-h-[90vh]">
+          <DialogContent className="w-[95vw] max-w-[600px] max-h-[95vh] overflow-y-auto sm:max-h-[90vh]" aria-describedby="monthly-expense-form-description">
             <DialogHeader className="pb-4">
               <DialogTitle className="text-lg sm:text-xl font-bold">Agregar Gasto Mensual</DialogTitle>
             </DialogHeader>
+            <div id="monthly-expense-form-description" className="sr-only">
+              Formulario para agregar un gasto mensual recurrente
+            </div>
             
             <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
               {/* Name */}
