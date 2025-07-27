@@ -593,7 +593,7 @@ export const ModernChatLogger = () => {
                           <SelectValue placeholder="Selecciona una tarjeta" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">
+                          <SelectItem value="none">
                             <div className="flex items-center gap-2">
                               <span>💳</span>
                               <span>Sin tarjeta</span>

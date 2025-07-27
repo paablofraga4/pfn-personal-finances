@@ -16,7 +16,7 @@ export const FloatingAddButton = () => {
   const [description, setDescription] = useState('')
   const [type, setType] = useState<'income' | 'expense'>('expense')
   const [category, setCategory] = useState('')
-  const [cardId, setCardId] = useState('')
+  const [cardId, setCardId] = useState('none')
   const [loading, setLoading] = useState(false)
   const [showGross, setShowGross] = useState(false)
 
@@ -32,7 +32,7 @@ export const FloatingAddButton = () => {
         description,
         category,
         type,
-        cardId: cardId || undefined,
+        cardId: cardId === 'none' ? undefined : cardId || undefined,
         date: new Date().toISOString()
       })
       
@@ -42,7 +42,7 @@ export const FloatingAddButton = () => {
         description,
         category,
         type,
-        cardId: cardId || undefined,
+        cardId: cardId === 'none' ? undefined : cardId || undefined,
         date: new Date().toISOString()
       })
       
@@ -53,7 +53,7 @@ export const FloatingAddButton = () => {
       setGrossAmount('')
       setDescription('')
       setCategory('')
-      setCardId('')
+      setCardId('none')
       setOpen(false)
     } catch (error) {
       console.error('Error adding transaction:', error)
@@ -233,7 +233,7 @@ export const FloatingAddButton = () => {
                   <SelectValue placeholder="Selecciona una tarjeta (opcional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Sin tarjeta</SelectItem>
+                  <SelectItem value="none">Sin tarjeta</SelectItem>
                   {cards.map((card) => (
                     <SelectItem key={card.id} value={card.id}>
                       <div className="flex items-center gap-2">

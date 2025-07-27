@@ -124,7 +124,7 @@ export const QuickAddTransaction = () => {
                   <SelectValue placeholder="Tarjeta" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Sin tarjeta</SelectItem>
+                  <SelectItem value="none">Sin tarjeta</SelectItem>
                   {cards.map((card) => (
                     <SelectItem key={card.id} value={card.id}>
                       {card.name} ****{card.lastFourDigits}

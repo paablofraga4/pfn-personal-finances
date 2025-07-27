@@ -21,7 +21,7 @@ export const AddTransactionDialog = ({ open, onOpenChange }: AddTransactionDialo
   const [amount, setAmount] = useState('')
   const [description, setDescription] = useState('')
   const [category, setCategory] = useState('')
-  const [cardId, setCardId] = useState('')
+  const [cardId, setCardId] = useState('none')
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -35,7 +35,7 @@ export const AddTransactionDialog = ({ open, onOpenChange }: AddTransactionDialo
         description,
         category,
         type,
-        cardId: cardId || undefined,
+        cardId: cardId === 'none' ? undefined : cardId || undefined,
         date: new Date(date).toISOString()
       })
       
@@ -43,7 +43,7 @@ export const AddTransactionDialog = ({ open, onOpenChange }: AddTransactionDialo
       setAmount('')
       setDescription('')
       setCategory('')
-      setCardId('')
+      setCardId('none')
       setDate(new Date().toISOString().split('T')[0])
       onOpenChange(false)
     } catch (error) {
@@ -173,7 +173,7 @@ export const AddTransactionDialog = ({ open, onOpenChange }: AddTransactionDialo
                 <SelectValue placeholder="Selecciona una tarjeta" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">
+                <SelectItem value="none">
                   <div className="flex items-center gap-3">
                     <span className="text-lg">💳</span>
                     <span>Sin tarjeta</span>
