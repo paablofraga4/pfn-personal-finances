@@ -14,11 +14,13 @@ export const categories: Category[] = [
   
   // Ingresos
   { id: 'salary', name: 'Salario', icon: '💰', color: '#22c55e' },
-  { id: 'work', name: 'Trabajo', icon: '💼', color: '#3b82f6' },
   { id: 'freelance', name: 'Freelance', icon: '💻', color: '#8b5cf6' },
-  { id: 'investment', name: 'Inversiones', icon: '📈', color: '#f59e0b' },
   { id: 'gift', name: 'Regalo', icon: '🎁', color: '#ec4899' },
   { id: 'other-income', name: 'Otros Ingresos', icon: '💵', color: '#10b981' },
+  
+  // Gastos de Trabajo e Inversiones
+  { id: 'work', name: 'Trabajo', icon: '💼', color: '#3b82f6' },
+  { id: 'investment', name: 'Inversiones', icon: '📈', color: '#f59e0b' },
 ]
 
 export const getCategoryById = (id: string): Category | undefined => {
@@ -26,13 +28,13 @@ export const getCategoryById = (id: string): Category | undefined => {
 }
 
 export const getExpenseCategories = (): Category[] => {
-  const expenseCategories = categories.filter(cat => !cat.id.includes('income') && !cat.id.includes('salary') && !cat.id.includes('work') && !cat.id.includes('freelance') && !cat.id.includes('investment') && !cat.id.includes('gift'))
+  const expenseCategories = categories.filter(cat => !cat.id.includes('income') && !cat.id.includes('salary') && !cat.id.includes('freelance') && !cat.id.includes('gift'))
   console.log('🔍 getExpenseCategories - Found:', expenseCategories.length, 'categories')
   return expenseCategories
 }
 
 export const getIncomeCategories = (): Category[] => {
-  const incomeCategories = categories.filter(cat => cat.id.includes('income') || cat.id.includes('salary') || cat.id.includes('work') || cat.id.includes('freelance') || cat.id.includes('investment') || cat.id.includes('gift'))
+  const incomeCategories = categories.filter(cat => cat.id.includes('income') || cat.id.includes('salary') || cat.id.includes('freelance') || cat.id.includes('gift'))
   console.log('🔍 getIncomeCategories - Found:', incomeCategories.length, 'categories')
   console.log('🔍 getIncomeCategories - Categories:', incomeCategories.map(c => c.name))
   return incomeCategories
