@@ -64,6 +64,9 @@ export const useFinance = () => {
         monthlyExpenses: monthlyExpensesData?.length || 0
       })
       
+      console.log('Cards data details:', cardsData)
+      console.log('Setting cards state with:', cardsData || [])
+      
       setTransactions(transactionsData || [])
       setCards(cardsData || [])
       setSavingsGoals(savingsGoalsData || [])
@@ -160,6 +163,14 @@ export const useFinance = () => {
 
   const addCard = async (card: Omit<Card, 'id' | 'userId' | 'createdAt'>) => {
     try {
+      console.log('=== ADDING CARD ===')
+      console.log('Card data:', { ...card, userId: user.id })
+      console.log('User ID:', user?.id)
+      console.log('User object:', user)
+      
+      // Verificar que la tabla existe
+      console.log('Checking if cards table exists...')
+      
       const newCard = await blink.db.cards.create({
         ...card,
         limitAmount: card.limit,
@@ -167,11 +178,35 @@ export const useFinance = () => {
         createdAt: new Date().toISOString()
       })
       
-      setCards(prev => [...prev, newCard])
+      console.log('✅ Card created successfully:', newCard)
+      console.log('Previous cards count:', cards.length)
+      setCards(prev => {
+        const newList = [...prev, newCard]
+        console.log('New cards count:', newList.length)
+        return newList
+      })
+      
+      // Verificar que se guardó correctamente
+      setTimeout(async () => {
+        try {
+          console.log('🔍 Verificando que la tarjeta se guardó...')
+          const savedCards = await blink.db.cards.list({
+            where: { userId: user.id },
+            orderBy: { createdAt: 'desc' },
+            limit: 5
+          })
+          console.log('📊 Tarjetas guardadas:', savedCards)
+        } catch (error) {
+          console.error('❌ Error verificando tarjetas:', error)
+        }
+      }, 1000)
+      
       toast.success('Tarjeta agregada correctamente')
       return newCard
     } catch (error) {
       console.error('Error adding card:', error)
+      console.error('Card data:', card)
+      console.error('User ID:', user?.id)
       toast.error('Error al agregar la tarjeta')
       throw error
     }

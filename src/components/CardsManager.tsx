@@ -48,6 +48,17 @@ export const CardsManager = () => {
 
     setLoading(true)
     try {
+      console.log('=== SUBMITTING CARD FORM ===')
+      console.log('Form data:', {
+        name,
+        type,
+        lastFourDigits,
+        color,
+        balance: parseFloat(balance),
+        limit: limit ? parseFloat(limit) : undefined,
+        purpose
+      })
+      
       await addCard({
         name,
         type,
@@ -69,6 +80,15 @@ export const CardsManager = () => {
       setShowAddCard(false)
     } catch (error) {
       console.error('Error adding card:', error)
+      console.error('Form data:', {
+        name,
+        type,
+        lastFourDigits,
+        color,
+        balance,
+        limit,
+        purpose
+      })
     } finally {
       setLoading(false)
     }
