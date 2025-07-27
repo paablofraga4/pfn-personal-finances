@@ -12,21 +12,17 @@ export const useFinance = () => {
   const [user, setUser] = useState<any>(null)
 
   const loadData = useCallback(async () => {
-    if (!user?.id) {
-      setLoading(false)
-      return
-    }
-    
     try {
       setLoading(true)
       
-      // Verificar que el usuario esté autenticado
+      // Si no hay usuario, usar un ID por defecto o crear uno anónimo
+      const userId = user?.id || 'anonymous-user'
+      
+      console.log('Loading data for user:', userId)
+      
+      // Verificar el estado de autenticación
       const authState = await blink.auth.getState()
-      if (!authState.user) {
-        console.log('Usuario no autenticado')
-        setLoading(false)
-        return
-      }
+      console.log('Auth state:', authState)
       
       // Agregar timeout para evitar bloqueos
       const timeoutPromise = new Promise((_, reject) => 
@@ -35,20 +31,20 @@ export const useFinance = () => {
       
       const dataPromise = Promise.all([
         blink.db.transactions.list({
-          where: { userId: user.id },
+          where: { userId: userId },
           orderBy: { createdAt: 'desc' },
           limit: 100
         }).catch(() => []),
         blink.db.cards.list({
-          where: { userId: user.id },
+          where: { userId: userId },
           orderBy: { createdAt: 'desc' }
         }).catch(() => []),
         blink.db.savingsGoals.list({
-          where: { userId: user.id },
+          where: { userId: userId },
           orderBy: { createdAt: 'desc' }
         }).catch(() => []),
         blink.db.monthlyExpenses.list({
-          where: { userId: user.id },
+          where: { userId: userId },
           orderBy: { createdAt: 'desc' }
         }).catch(() => [])
       ])
@@ -94,12 +90,13 @@ export const useFinance = () => {
 
   const addTransaction = async (transaction: Omit<Transaction, 'id' | 'userId' | 'createdAt'>) => {
     try {
-      console.log('Adding transaction:', { ...transaction, userId: user.id })
+      const userId = user?.id || 'anonymous-user'
+      console.log('Adding transaction:', { ...transaction, userId })
       
       const newTransaction = await blink.db.transactions.create({
         ...transaction,
         grossAmount: transaction.grossAmount,
-        userId: user.id,
+        userId: userId,
         createdAt: new Date().toISOString()
       })
       
@@ -200,11 +197,12 @@ export const useFinance = () => {
   // Nuevas funciones para gastos mensuales
   const addMonthlyExpense = async (expense: Omit<MonthlyExpense, 'id' | 'userId' | 'createdAt'>) => {
     try {
-      console.log('Adding monthly expense:', { ...expense, userId: user.id })
+      const userId = user?.id || 'anonymous-user'
+      console.log('Adding monthly expense:', { ...expense, userId })
       
       const newExpense = await blink.db.monthlyExpenses.create({
         ...expense,
-        userId: user.id,
+        userId: userId,
         createdAt: new Date().toISOString()
       })
       
