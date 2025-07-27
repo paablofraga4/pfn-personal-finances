@@ -225,9 +225,26 @@ export const useFinance = () => {
 
   const deleteTransaction = async (id: string) => {
     try {
-      await blink.db.transactions.delete(id)
+      console.log('=== DELETING TRANSACTION ===')
+      console.log('Transaction ID:', id)
+      
+      // Eliminar de Supabase
+      const { error } = await supabase
+        .from('transactions')
+        .delete()
+        .eq('id', id)
+      
+      if (error) {
+        console.error('❌ Error deleting transaction from database:', error)
+        toast.error('Error al eliminar la transacción')
+        return
+      }
+      
+      console.log('✅ Transaction deleted successfully from database')
+      
+      // Actualizar estado local
       setTransactions(prev => prev.filter(t => t.id !== id))
-      toast.success('Transacción eliminada')
+      toast.success('Transacción eliminada correctamente')
     } catch (error) {
       console.error('Error deleting transaction:', error)
       toast.error('Error al eliminar la transacción')
@@ -236,6 +253,9 @@ export const useFinance = () => {
 
   const deleteCard = async (id: string) => {
     try {
+      console.log('=== DELETING CARD ===')
+      console.log('Card ID:', id)
+      
       // Si es una tarjeta temporal, solo eliminar localmente
       if (id.startsWith('temp_card_')) {
         setCards(prev => prev.filter(c => c.id !== id))
@@ -243,14 +263,26 @@ export const useFinance = () => {
         return
       }
       
-      await blink.db.cards.delete(id)
+      // Eliminar de Supabase
+      const { error } = await supabase
+        .from('cards')
+        .delete()
+        .eq('id', id)
+      
+      if (error) {
+        console.error('❌ Error deleting card from database:', error)
+        toast.error('Error al eliminar la tarjeta')
+        return
+      }
+      
+      console.log('✅ Card deleted successfully from database')
+      
+      // Actualizar estado local
       setCards(prev => prev.filter(c => c.id !== id))
-      toast.success('Tarjeta eliminada')
+      toast.success('Tarjeta eliminada correctamente')
     } catch (error) {
       console.error('Error deleting card:', error)
-      // Si falla la eliminación en BD, eliminar localmente
-      setCards(prev => prev.filter(c => c.id !== id))
-      toast.success('Tarjeta eliminada (localmente)')
+      toast.error('Error al eliminar la tarjeta')
     }
   }
 
@@ -386,9 +418,26 @@ export const useFinance = () => {
 
   const deleteMonthlyExpense = async (id: string) => {
     try {
-      console.log('⚠️ WARNING: Monthly expenses table does not exist, deleting locally')
+      console.log('=== DELETING MONTHLY EXPENSE ===')
+      console.log('Monthly Expense ID:', id)
+      
+      // Eliminar de Supabase
+      const { error } = await supabase
+        .from('monthly_expenses')
+        .delete()
+        .eq('id', id)
+      
+      if (error) {
+        console.error('❌ Error deleting monthly expense from database:', error)
+        toast.error('Error al eliminar el gasto mensual')
+        return
+      }
+      
+      console.log('✅ Monthly expense deleted successfully from database')
+      
+      // Actualizar estado local
       setMonthlyExpenses(prev => prev.filter(e => e.id !== id))
-      toast.success('Gasto mensual eliminado (localmente)')
+      toast.success('Gasto mensual eliminado correctamente')
     } catch (error) {
       console.error('Error deleting monthly expense:', error)
       toast.error('Error al eliminar el gasto mensual')
