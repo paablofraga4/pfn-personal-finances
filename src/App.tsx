@@ -69,8 +69,8 @@ function App() {
     <ErrorBoundary>
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-4 max-w-6xl">
-          <div className="mb-6">
-            <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-1">
+          <div className="mb-6 text-center">
+            <h1 className="text-2xl sm:text-3xl font-bold mb-1 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
               Hub Financiero
             </h1>
             <p className="text-sm sm:text-base text-muted-foreground">
@@ -158,13 +158,9 @@ function App() {
           />
         )}
         
-        {/* Desktop Floating Buttons */}
-        {!isMobile && (
-          <>
-            <FloatingAddButton />
-            <FloatingChatButton />
-          </>
-        )}
+        {/* Floating Buttons - Show on both mobile and desktop */}
+        <FloatingAddButton />
+        <FloatingChatButton />
         
         <Toaster position="bottom-center" />
       </div>

@@ -73,7 +73,7 @@ export const FloatingAddButton = () => {
         <DialogTrigger asChild>
           <Button 
             size="lg"
-            className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+            className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 md:bottom-6 md:right-6"
           >
             <Plus className="h-6 w-6" />
           </Button>

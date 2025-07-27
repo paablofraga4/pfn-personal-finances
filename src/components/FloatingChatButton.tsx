@@ -13,7 +13,7 @@ export const FloatingChatButton = () => {
         <DialogTrigger asChild>
           <Button 
             size="lg"
-            className="fixed bottom-6 left-6 h-14 w-14 rounded-full shadow-lg z-50 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+            className="fixed bottom-6 left-6 h-14 w-14 rounded-full shadow-lg z-50 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 md:bottom-6 md:left-6"
           >
             <MessageSquare className="h-6 w-6" />
           </Button>

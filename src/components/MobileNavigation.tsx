@@ -60,7 +60,7 @@ export const MobileNavigation = ({ activeTab, onTabChange }: MobileNavigationPro
         onClick={() => setIsOpen(true)}
         size="sm"
         variant="ghost"
-        className="fixed top-4 left-4 z-50 h-10 w-10 rounded-full bg-background/80 backdrop-blur border border-border shadow-lg"
+        className="fixed top-4 left-4 z-50 h-10 w-10 rounded-full bg-background/80 backdrop-blur border border-border shadow-lg md:hidden"
       >
         <Menu className="h-5 w-5" />
       </Button>
