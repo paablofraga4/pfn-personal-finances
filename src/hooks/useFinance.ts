@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { blink } from '../blink/client'
+import { supabase } from '../lib/supabase'
 import { Transaction, Card, SavingsGoal, FinanceStats, ReportPeriod, MonthlyExpense, SavingsAssistant } from '../types/finance'
 import { toast } from 'react-hot-toast'
 
@@ -22,9 +22,6 @@ export const useFinance = () => {
     
     console.log('Loading data for user:', user.id)
     
-    // Verificar el estado de autenticación - usar el estado actual en lugar de getState()
-    console.log('Auth state from context:', { user, loading })
-    
     if (!user) {
       console.log('Usuario no autenticado')
       setLoading(false)
@@ -33,79 +30,52 @@ export const useFinance = () => {
     
     console.log('User is authenticated, loading data...')
     
-    // Verificar qué tablas existen
-    console.log('🔍 Checking available tables...')
     try {
-      // Intentar cargar una pequeña cantidad de cada tabla para verificar si existen
-      const testQueries = [
-        blink.db.transactions.list({ limit: 1 }).catch(e => ({ error: 'transactions', message: e.message })),
-        blink.db.cards.list({ limit: 1 }).catch(e => ({ error: 'cards', message: e.message })),
-        blink.db.savingsGoals.list({ limit: 1 }).catch(e => ({ error: 'savingsGoals', message: e.message })),
-        blink.db.monthlyExpenses.list({ limit: 1 }).catch(e => ({ error: 'monthlyExpenses', message: e.message }))
-      ]
+      console.log('📊 Loading data from Supabase...')
       
-      const testResults = await Promise.all(testQueries)
-      console.log('📊 Table availability check:', testResults.map((result, index) => {
-        const tableNames = ['transactions', 'cards', 'savingsGoals', 'monthlyExpenses']
-        if ('error' in result) {
-          return `${tableNames[index]}: ❌ ${result.message}`
-        } else {
-          return `${tableNames[index]}: ✅ Available`
-        }
-      }))
-    } catch (error) {
-      console.error('Error checking tables:', error)
-    }
-    
-    // Cargar datos directamente sin verificación adicional
-    console.log('Loading data directly...')
-    
-    try {
-      const [transactionsData, cardsData, savingsGoalsData] = await Promise.all([
-        blink.db.transactions.list({
-          where: { userId: user.id },
-          orderBy: { createdAt: 'desc' },
-          limit: 100
-        }).catch((error) => {
-          console.error('Error loading transactions:', error)
-          return []
-        }),
-        blink.db.cards.list({
-          where: { userId: user.id },
-          orderBy: { createdAt: 'desc' }
-        }).catch((error) => {
-          console.error('Error loading cards:', error)
-          return []
-        }),
-        blink.db.savingsGoals.list({
-          where: { userId: user.id },
-          orderBy: { createdAt: 'desc' }
-        }).catch((error) => {
-          console.error('Error loading savings goals:', error)
-          return []
-        })
+      // Cargar datos usando Supabase directamente
+      const [transactionsResult, cardsResult, savingsGoalsResult, monthlyExpensesResult] = await Promise.all([
+        supabase
+          .from('transactions')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(100),
+        supabase
+          .from('cards')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('savings_goals')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('monthly_expenses')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
       ])
       
-      // Monthly expenses no existe, usar array vacío
-      const monthlyExpensesData: any[] = []
-      
-      console.log('Data loaded:', {
-        transactions: transactionsData?.length || 0,
-        cards: cardsData?.length || 0,
-        savingsGoals: savingsGoalsData?.length || 0,
-        monthlyExpenses: monthlyExpensesData?.length || 0
+      console.log('📊 Supabase results:', {
+        transactions: transactionsResult.data?.length || 0,
+        cards: cardsResult.data?.length || 0,
+        savingsGoals: savingsGoalsResult.data?.length || 0,
+        monthlyExpenses: monthlyExpensesResult.data?.length || 0
       })
       
-      console.log('Cards data details:', cardsData)
-      console.log('Setting cards state with:', cardsData || [])
+      if (transactionsResult.error) console.error('Error loading transactions:', transactionsResult.error)
+      if (cardsResult.error) console.error('Error loading cards:', cardsResult.error)
+      if (savingsGoalsResult.error) console.error('Error loading savings goals:', savingsGoalsResult.error)
+      if (monthlyExpensesResult.error) console.error('Error loading monthly expenses:', monthlyExpensesResult.error)
       
-      setTransactions(transactionsData || [])
-      setCards(cardsData || [])
-      setSavingsGoals(savingsGoalsData || [])
-      setMonthlyExpenses(monthlyExpensesData || [])
+      setTransactions(transactionsResult.data || [])
+      setCards(cardsResult.data || [])
+      setSavingsGoals(savingsGoalsResult.data || [])
+      setMonthlyExpenses(monthlyExpensesResult.data || [])
     } catch (error) {
       console.error('Error loading data:', error)
-      // En producción, no mostrar errores de red
       if (process.env.NODE_ENV === 'development') {
         toast.error('Error al cargar los datos')
       }
@@ -115,31 +85,43 @@ export const useFinance = () => {
   }, [user?.id])
 
   useEffect(() => {
-    const unsubscribe = blink.auth.onAuthStateChanged((state) => {
+    // Obtener sesión inicial
+    const getInitialSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.user) {
+        setUser(session.user)
+        setLoading(false)
+        loadData()
+      } else {
+        setLoading(false)
+      }
+    }
+    
+    getInitialSession()
+    
+    // Escuchar cambios de autenticación
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log('=== AUTH STATE CHANGED ===')
-      console.log('State:', state)
-      console.log('User:', state.user)
-      console.log('IsLoading:', state.isLoading)
-      console.log('User ID:', state.user?.id)
+      console.log('Event:', event)
+      console.log('User:', session?.user)
+      console.log('User ID:', session?.user?.id)
       
-      setUser(state.user)
-      setLoading(state.isLoading)
+      setUser(session?.user || null)
+      setLoading(false)
       
-      if (state.user && !state.isLoading) {
+      if (session?.user) {
         console.log('✅ User authenticated, loading data...')
         loadData()
-      } else if (!state.user && !state.isLoading) {
+      } else {
         console.log('❌ User not authenticated, clearing data...')
-        // Usuario no autenticado, limpiar datos
         setTransactions([])
         setCards([])
         setSavingsGoals([])
         setMonthlyExpenses([])
-      } else {
-        console.log('⏳ Still loading or in transition...')
       }
     })
-    return unsubscribe
+    
+    return () => subscription.unsubscribe()
   }, [loadData])
 
   const addTransaction = async (transaction: Omit<Transaction, 'id' | 'userId' | 'createdAt'>) => {
@@ -196,94 +178,46 @@ export const useFinance = () => {
   const addCard = async (card: Omit<Card, 'id' | 'userId' | 'createdAt'>) => {
     try {
       console.log('=== ADDING CARD ===')
-      console.log('Card data:', { ...card, userId: user.id })
+      console.log('Card data:', { ...card, user_id: user.id })
       console.log('User ID:', user?.id)
-      console.log('User object:', user)
       
-      // Intentar crear la tabla si no existe
-      console.log('🔧 Attempting to create cards table if it doesn\'t exist...')
-      
-      // Estructura de datos ultra-simple que debería funcionar
-      const simpleCardData = {
+      // Preparar datos para Supabase (usar snake_case)
+      const cardData = {
         name: card.name,
         type: card.type,
-        lastFourDigits: card.lastFourDigits,
+        last_four_digits: card.lastFourDigits,
         color: card.color,
         balance: card.balance,
-        userId: user.id,
-        createdAt: new Date().toISOString()
+        limit_amount: card.limit || 0,
+        purpose: card.purpose || 'otros',
+        user_id: user.id
       }
       
-      try {
-        console.log('📤 Attempting to create card with simple structure:', simpleCardData)
-        
-        const newCard = await blink.db.cards.create(simpleCardData)
-        
-        console.log('✅ Card created successfully in database:', newCard)
-        setCards(prev => {
-          const newList = [...prev, newCard]
-          console.log('New cards count:', newList.length)
-          return newList
-        })
-        
-        toast.success('Tarjeta agregada correctamente')
-        return newCard
-      } catch (dbError) {
-        console.error('❌ Database creation failed:', dbError.message)
-        console.log('🔧 This might be because the table doesn\'t exist or has different schema')
-        
-        // Intentar crear la tabla primero
-        try {
-          console.log('🔧 Attempting to create cards table...')
-          // Intentar crear un registro de prueba para forzar la creación de la tabla
-          await blink.db.cards.create({
-            name: 'Test Card',
-            type: 'credit',
-            lastFourDigits: '0000',
-            color: '#3b82f6',
-            balance: 0,
-            userId: user.id,
-            createdAt: new Date().toISOString()
-          })
-          console.log('✅ Cards table might have been created')
-          
-          // Ahora intentar crear la tarjeta real
-          const newCard = await blink.db.cards.create(simpleCardData)
-          console.log('✅ Card created successfully after table creation:', newCard)
-          
-          setCards(prev => {
-            const newList = [...prev, newCard]
-            console.log('New cards count:', newList.length)
-            return newList
-          })
-          
-          toast.success('Tarjeta agregada correctamente')
-          return newCard
-        } catch (tableError) {
-          console.error('❌ Table creation also failed:', tableError.message)
-          
-          // Fallback local definitivo
-          console.error('❌ Using local fallback - database not available')
-          
-          const tempId = `temp_card_${Date.now()}`
-          const localCard = {
-            id: tempId,
-            ...simpleCardData,
-            limit: card.limit || 0,
-            purpose: card.purpose || 'otros'
-          }
-          
-          console.log('✅ Card created locally:', localCard)
-          setCards(prev => [localCard, ...prev])
-          
-          toast.success('Tarjeta agregada (guardada localmente)')
-          return localCard
-        }
+      console.log('📤 Creating card in Supabase:', cardData)
+      
+      const { data: newCard, error } = await supabase
+        .from('cards')
+        .insert(cardData)
+        .select()
+        .single()
+      
+      if (error) {
+        console.error('❌ Error creating card:', error)
+        toast.error('Error al agregar la tarjeta')
+        throw error
       }
+      
+      console.log('✅ Card created successfully:', newCard)
+      setCards(prev => {
+        const newList = [...prev, newCard]
+        console.log('New cards count:', newList.length)
+        return newList
+      })
+      
+      toast.success('Tarjeta agregada correctamente')
+      return newCard
     } catch (error) {
       console.error('Error adding card:', error)
-      console.error('Card data:', card)
-      console.error('User ID:', user?.id)
       toast.error('Error al agregar la tarjeta')
       throw error
     }
