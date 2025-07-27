@@ -38,10 +38,7 @@ function App() {
     return <Login />
   }
 
-  const handleAddClick = () => {
-    // Aquí puedes abrir el diálogo de añadir transacción
-    console.log('Add button clicked')
-  }
+
 
   const renderContent = () => {
     switch (activeTab) {
@@ -83,7 +80,7 @@ function App() {
 
           {isMobile ? (
             // Mobile Layout
-            <div className="space-y-6 pb-20">
+            <div className="space-y-6 pt-16">
               {renderContent()}
             </div>
           ) : (
@@ -158,7 +155,6 @@ function App() {
           <MobileNavigation
             activeTab={activeTab}
             onTabChange={setActiveTab}
-            onAddClick={handleAddClick}
           />
         )}
         
