@@ -9,6 +9,8 @@ export interface Transaction {
   cardId?: string
   date: string
   createdAt: string
+  isRecurring?: boolean
+  recurringId?: string
 }
 
 export interface Card {
@@ -38,6 +40,19 @@ export interface SavingsGoal {
   createdAt: string
 }
 
+export interface MonthlyExpense {
+  id: string
+  userId: string
+  name: string
+  amount: number
+  category: string
+  cardId?: string
+  dayOfMonth: number // Día del mes en que se cobra (1-31)
+  isActive: boolean
+  description?: string
+  createdAt: string
+}
+
 export interface Category {
   id: string
   name: string
@@ -57,4 +72,14 @@ export interface FinanceStats {
   weeklyExpenses: number
   savingsRate: number
   totalSavings: number
+}
+
+export interface SavingsAssistant {
+  monthlyGoal: number
+  currentSavings: number
+  projectedSavings: number
+  recommendations: string[]
+  alerts: string[]
+  spendingLimit: number
+  dailyBudget: number
 }

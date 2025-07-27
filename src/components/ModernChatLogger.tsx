@@ -4,6 +4,8 @@ import { Card, CardContent } from './ui/card'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Badge } from './ui/badge'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
+import { Label } from './ui/label'
 import { 
   MessageSquare, 
   Send, 
@@ -15,7 +17,8 @@ import {
   Euro,
   TrendingUp,
   TrendingDown,
-  Loader2
+  Loader2,
+  CreditCard
 } from 'lucide-react'
 import { categories } from '../data/categories'
 import { blink } from '../blink/client'
@@ -28,6 +31,7 @@ interface ParsedTransaction {
   type: 'income' | 'expense'
   confidence: 'high' | 'medium' | 'low'
   date?: Date
+  cardId?: string
 }
 
 interface ChatMessage {
@@ -58,7 +62,7 @@ const getCategoryKeywords = (categoryId: string): string[] => {
 }
 
 export const ModernChatLogger = () => {
-  const { addTransaction } = useFinance()
+  const { addTransaction, cards } = useFinance()
   const [message, setMessage] = useState('')
   const [isRecording, setIsRecording] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
@@ -447,7 +451,8 @@ export const ModernChatLogger = () => {
         category: transaction.category,
         type: transaction.type,
         date: (transaction.date || new Date()).toISOString(),
-        grossAmount: transaction.type === 'income' ? transaction.amount * 1.21 : undefined
+        grossAmount: transaction.type === 'income' ? transaction.amount * 1.21 : undefined,
+        cardId: transaction.cardId
       }
       
       console.log('📝 Datos de transacción a enviar:', transactionData)
@@ -487,12 +492,27 @@ export const ModernChatLogger = () => {
     setMessages(prev => [...prev, assistantMessage])
   }
 
+  const handleCardSelection = (messageId: string, cardId: string) => {
+    setMessages(prev => prev.map(msg => {
+      if (msg.id === messageId && msg.transaction) {
+        return {
+          ...msg,
+          transaction: {
+            ...msg.transaction,
+            cardId: cardId || undefined
+          }
+        }
+      }
+      return msg
+    }))
+  }
+
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="p-4 border-b bg-gradient-to-r from-purple-500/10 to-blue-500/10">
+      <div className="p-4 border-b bg-gradient-to-r from-blue-500/10 to-purple-500/10">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-full bg-gradient-to-r from-purple-500 to-blue-500">
+          <div className="p-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-500">
             <Sparkles className="h-5 w-5 text-white" />
           </div>
           <div>
@@ -510,7 +530,7 @@ export const ModernChatLogger = () => {
           <div key={msg.id} className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}>
             {msg.type === 'transaction' && msg.transaction ? (
               // Transaction confirmation card
-              <Card className="max-w-sm border-2 border-dashed border-primary/50 bg-primary/5">
+              <Card className="max-w-sm border-2 border-dashed border-primary/50 bg-primary/5 shadow-glow">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-2 mb-3">
                     {msg.transaction.type === 'income' ? (
@@ -553,12 +573,50 @@ export const ModernChatLogger = () => {
                       </span>
                     </div>
                   </div>
+
+                  {/* Card Selection */}
+                  {cards.length > 0 && (
+                    <div className="mb-4">
+                      <Label className="text-xs font-medium flex items-center gap-1 mb-2">
+                        <CreditCard className="h-3 w-3" />
+                        Tarjeta (Opcional)
+                      </Label>
+                      <Select 
+                        value={msg.transaction.cardId || ''} 
+                        onValueChange={(value) => handleCardSelection(msg.id, value)}
+                      >
+                        <SelectTrigger className="h-8 text-xs">
+                          <SelectValue placeholder="Selecciona una tarjeta" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">
+                            <div className="flex items-center gap-2">
+                              <span>💳</span>
+                              <span>Sin tarjeta</span>
+                            </div>
+                          </SelectItem>
+                          {cards.map((card) => (
+                            <SelectItem key={card.id} value={card.id}>
+                              <div className="flex items-center gap-2">
+                                <div 
+                                  className="w-3 h-3 rounded-full" 
+                                  style={{ backgroundColor: card.color }}
+                                />
+                                <span>{card.name}</span>
+                                <span className="text-muted-foreground">(**** {card.lastFourDigits})</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                   
                   <div className="flex gap-2">
                     <Button 
                       size="sm"
                       onClick={() => handleConfirmTransaction(msg.id, msg.transaction!)}
-                      className="flex-1 h-8"
+                      className="flex-1 h-8 gradient-primary text-white shadow-glow"
                     >
                       <CheckCircle className="h-3 w-3 mr-1" />
                       Confirmar
@@ -578,7 +636,7 @@ export const ModernChatLogger = () => {
               // Regular message
               <div className={`max-w-[80%] p-3 rounded-2xl ${
                 msg.type === 'user' 
-                  ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white' 
+                  ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-glow' 
                   : 'bg-muted'
               }`}>
                 <p className="text-sm">{msg.content}</p>
@@ -631,7 +689,7 @@ export const ModernChatLogger = () => {
           <Button 
             onClick={handleSendMessage} 
             disabled={!message.trim() || isRecording || isProcessing}
-            className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
+            className="gradient-primary text-white shadow-glow"
           >
             <Send className="h-4 w-4" />
           </Button>

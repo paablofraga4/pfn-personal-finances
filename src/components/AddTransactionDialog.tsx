@@ -7,7 +7,7 @@ import { Label } from './ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
 import { Textarea } from './ui/textarea'
 import { categories, getExpenseCategories, getIncomeCategories } from '../data/categories'
-import { ArrowUpRight, ArrowDownRight } from 'lucide-react'
+import { ArrowUpRight, ArrowDownRight, CreditCard } from 'lucide-react'
 
 interface AddTransactionDialogProps {
   open: boolean
@@ -55,16 +55,23 @@ export const AddTransactionDialog = ({ open, onOpenChange }: AddTransactionDialo
 
   const availableCategories = type === 'income' ? getIncomeCategories() : getExpenseCategories()
 
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('es-ES', {
+      style: 'currency',
+      currency: 'EUR'
+    }).format(amount)
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Agregar Transacción</DialogTitle>
+          <DialogTitle className="text-xl font-bold">Agregar Transacción</DialogTitle>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
           {/* Type Selection */}
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-3">
             <Button
               type="button"
               variant={type === 'expense' ? 'default' : 'outline'}
@@ -72,10 +79,14 @@ export const AddTransactionDialog = ({ open, onOpenChange }: AddTransactionDialo
                 setType('expense')
                 setCategory('')
               }}
-              className="flex items-center gap-2"
+              className={`flex items-center gap-2 h-12 ${
+                type === 'expense' 
+                  ? 'gradient-primary text-white shadow-glow' 
+                  : 'hover:shadow-md transition-shadow'
+              }`}
             >
-              <ArrowDownRight className="h-4 w-4" />
-              Gasto
+              <ArrowDownRight className="h-5 w-5" />
+              <span className="font-medium">Gasto</span>
             </Button>
             <Button
               type="button"
@@ -84,52 +95,63 @@ export const AddTransactionDialog = ({ open, onOpenChange }: AddTransactionDialo
                 setType('income')
                 setCategory('')
               }}
-              className="flex items-center gap-2"
+              className={`flex items-center gap-2 h-12 ${
+                type === 'income' 
+                  ? 'gradient-accent text-white shadow-glow-accent' 
+                  : 'hover:shadow-md transition-shadow'
+              }`}
             >
-              <ArrowUpRight className="h-4 w-4" />
-              Ingreso
+              <ArrowUpRight className="h-5 w-5" />
+              <span className="font-medium">Ingreso</span>
             </Button>
           </div>
 
           {/* Amount */}
           <div className="space-y-2">
-            <Label htmlFor="amount">Cantidad</Label>
-            <Input
-              id="amount"
-              type="number"
-              step="0.01"
-              placeholder="0.00"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              required
-            />
+            <Label htmlFor="amount" className="text-sm font-medium">Cantidad</Label>
+            <div className="relative">
+              <Input
+                id="amount"
+                type="number"
+                step="0.01"
+                placeholder="0.00"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                required
+                className="h-12 text-lg font-medium pr-8"
+              />
+              <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">
+                €
+              </span>
+            </div>
           </div>
 
           {/* Description */}
           <div className="space-y-2">
-            <Label htmlFor="description">Descripción</Label>
+            <Label htmlFor="description" className="text-sm font-medium">Descripción</Label>
             <Textarea
               id="description"
               placeholder="Describe la transacción..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               required
+              className="min-h-[80px] resize-none"
             />
           </div>
 
           {/* Category */}
           <div className="space-y-2">
-            <Label htmlFor="category">Categoría</Label>
+            <Label htmlFor="category" className="text-sm font-medium">Categoría</Label>
             <Select value={category} onValueChange={setCategory} required>
-              <SelectTrigger>
+              <SelectTrigger className="h-12">
                 <SelectValue placeholder="Selecciona una categoría" />
               </SelectTrigger>
               <SelectContent>
                 {availableCategories.map((cat) => (
                   <SelectItem key={cat.id} value={cat.id}>
-                    <div className="flex items-center gap-2">
-                      <span>{cat.icon}</span>
-                      <span>{cat.name}</span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-lg">{cat.icon}</span>
+                      <span className="font-medium">{cat.name}</span>
                     </div>
                   </SelectItem>
                 ))}
@@ -138,47 +160,66 @@ export const AddTransactionDialog = ({ open, onOpenChange }: AddTransactionDialo
           </div>
 
           {/* Card Selection */}
-          {cards.length > 0 && (
-            <div className="space-y-2">
-              <Label htmlFor="card">Tarjeta (Opcional)</Label>
-              <Select value={cardId} onValueChange={setCardId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecciona una tarjeta" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Sin tarjeta</SelectItem>
-                  {cards.map((card) => (
-                    <SelectItem key={card.id} value={card.id}>
-                      {card.name} (**** {card.lastFourDigits})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+          <div className="space-y-2">
+            <Label htmlFor="card" className="text-sm font-medium flex items-center gap-2">
+              <CreditCard className="h-4 w-4" />
+              Tarjeta (Opcional)
+            </Label>
+            <Select value={cardId} onValueChange={setCardId}>
+              <SelectTrigger className="h-12">
+                <SelectValue placeholder="Selecciona una tarjeta" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">
+                  <div className="flex items-center gap-3">
+                    <span className="text-lg">💳</span>
+                    <span>Sin tarjeta</span>
+                  </div>
+                </SelectItem>
+                {cards.map((card) => (
+                  <SelectItem key={card.id} value={card.id}>
+                    <div className="flex items-center gap-3">
+                      <div 
+                        className="w-4 h-4 rounded-full" 
+                        style={{ backgroundColor: card.color }}
+                      />
+                      <span className="font-medium">{card.name}</span>
+                      <span className="text-muted-foreground">(**** {card.lastFourDigits})</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
           {/* Date */}
           <div className="space-y-2">
-            <Label htmlFor="date">Fecha</Label>
+            <Label htmlFor="date" className="text-sm font-medium">Fecha</Label>
             <Input
               id="date"
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
               required
+              className="h-12"
             />
           </div>
 
           {/* Submit Button */}
-          <div className="flex justify-end gap-2">
+          <div className="flex justify-end gap-3 pt-4">
             <Button
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
+              className="h-12 px-6"
             >
               Cancelar
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button 
+              type="submit" 
+              disabled={loading}
+              className="h-12 px-8 gradient-primary text-white shadow-glow"
+            >
               {loading ? 'Agregando...' : 'Agregar Transacción'}
             </Button>
           </div>

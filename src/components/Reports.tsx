@@ -6,14 +6,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Badge } from './ui/badge'
 import { ReportPeriod } from '../types/finance'
 import { getCategoryById } from '../data/categories'
-import { BarChart3, TrendingUp, TrendingDown, Calendar, Download, PieChart } from 'lucide-react'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell } from 'recharts'
+import { BarChart3, TrendingUp, TrendingDown, Calendar, Download, PieChart, CreditCard, Filter } from 'lucide-react'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell, LineChart, Line, AreaChart, Area } from 'recharts'
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#84cc16', '#f97316']
 
 export const Reports = () => {
-  const { transactions, getStats } = useFinance()
+  const { transactions, cards, getStats } = useFinance()
   const [period, setPeriod] = useState<ReportPeriod>('monthly')
+  const [selectedCard, setSelectedCard] = useState<string>('all')
   
   const stats = getStats(period)
 
@@ -52,7 +53,14 @@ export const Reports = () => {
         break
     }
 
-    return transactions.filter(t => new Date(t.date) >= startDate)
+    let filteredTransactions = transactions.filter(t => new Date(t.date) >= startDate)
+    
+    // Filtrar por tarjeta si está seleccionada
+    if (selectedCard !== 'all') {
+      filteredTransactions = filteredTransactions.filter(t => t.cardId === selectedCard)
+    }
+
+    return filteredTransactions
   }
 
   const getCategoryBreakdown = () => {
@@ -77,7 +85,14 @@ export const Reports = () => {
   const getMonthlyTrend = () => {
     const monthlyData: { [key: string]: { income: number, expenses: number } } = {}
     
-    transactions.forEach(transaction => {
+    let filteredTransactions = transactions
+    
+    // Filtrar por tarjeta si está seleccionada
+    if (selectedCard !== 'all') {
+      filteredTransactions = transactions.filter(t => t.cardId === selectedCard)
+    }
+    
+    filteredTransactions.forEach(transaction => {
       const date = new Date(transaction.date)
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
       
@@ -98,12 +113,41 @@ export const Reports = () => {
       .map(([month, data]) => ({
         month: new Date(month + '-01').toLocaleDateString('es-ES', { month: 'short', year: 'numeric' }),
         ingresos: data.income,
-        gastos: data.expenses
+        gastos: data.expenses,
+        balance: data.income - data.expenses
       }))
+  }
+
+  const getDailySpending = () => {
+    const now = new Date()
+    const startDate = new Date(now.getFullYear(), now.getMonth(), 1)
+    let filteredTransactions = transactions.filter(t => new Date(t.date) >= startDate)
+    
+    if (selectedCard !== 'all') {
+      filteredTransactions = filteredTransactions.filter(t => t.cardId === selectedCard)
+    }
+    
+    const dailyData: { [key: string]: number } = {}
+    
+    filteredTransactions.forEach(transaction => {
+      if (transaction.type === 'expense') {
+        const date = new Date(transaction.date)
+        const dayKey = date.getDate().toString()
+        dailyData[dayKey] = (dailyData[dayKey] || 0) + transaction.amount
+      }
+    })
+    
+    return Object.entries(dailyData)
+      .map(([day, amount]) => ({
+        day: parseInt(day),
+        gastos: amount
+      }))
+      .sort((a, b) => a.day - b.day)
   }
 
   const categoryBreakdown = getCategoryBreakdown()
   const monthlyTrend = getMonthlyTrend()
+  const dailySpending = getDailySpending()
 
   const pieChartData = categoryBreakdown.slice(0, 8).map((item, index) => ({
     name: item.category,
@@ -133,6 +177,33 @@ export const Reports = () => {
               <SelectItem value="yearly">Anual</SelectItem>
             </SelectContent>
           </Select>
+          
+          <Select value={selectedCard} onValueChange={setSelectedCard}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">
+                <div className="flex items-center gap-2">
+                  <CreditCard className="h-4 w-4" />
+                  Todas las tarjetas
+                </div>
+              </SelectItem>
+              {cards.map((card) => (
+                <SelectItem key={card.id} value={card.id}>
+                  <div className="flex items-center gap-2">
+                    <div 
+                      className="w-3 h-3 rounded-full" 
+                      style={{ backgroundColor: card.color }}
+                    />
+                    <span>{card.name}</span>
+                    <span className="text-muted-foreground">(**** {card.lastFourDigits})</span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
           <Button variant="outline" className="flex items-center gap-2">
             <Download className="h-4 w-4" />
             Exportar
@@ -142,7 +213,7 @@ export const Reports = () => {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
+        <Card className="gradient-card shadow-glow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Ingresos {getPeriodLabel(period)}</CardTitle>
             <TrendingUp className="h-4 w-4 text-accent" />
@@ -152,7 +223,7 @@ export const Reports = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="gradient-card shadow-glow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Gastos {getPeriodLabel(period)}</CardTitle>
             <TrendingDown className="h-4 w-4 text-destructive" />
@@ -162,7 +233,7 @@ export const Reports = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="gradient-card shadow-glow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Balance {getPeriodLabel(period)}</CardTitle>
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
@@ -178,7 +249,7 @@ export const Reports = () => {
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Monthly Trend */}
-        <Card>
+        <Card className="gradient-card shadow-glow">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
@@ -188,7 +259,7 @@ export const Reports = () => {
           <CardContent>
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={monthlyTrend}>
+                <AreaChart data={monthlyTrend}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="month" />
                   <YAxis tickFormatter={(value) => `€${value}`} />
@@ -196,16 +267,30 @@ export const Reports = () => {
                     formatter={(value: number) => [formatCurrency(value), '']}
                     labelStyle={{ color: '#000' }}
                   />
-                  <Bar dataKey="ingresos" fill="#10b981" name="Ingresos" />
-                  <Bar dataKey="gastos" fill="#ef4444" name="Gastos" />
-                </BarChart>
+                  <Area 
+                    type="monotone" 
+                    dataKey="ingresos" 
+                    stroke="#10b981" 
+                    fill="#10b981" 
+                    fillOpacity={0.3}
+                    name="Ingresos"
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="gastos" 
+                    stroke="#ef4444" 
+                    fill="#ef4444" 
+                    fillOpacity={0.3}
+                    name="Gastos"
+                  />
+                </AreaChart>
               </ResponsiveContainer>
             </div>
           </CardContent>
         </Card>
 
         {/* Category Breakdown */}
-        <Card>
+        <Card className="gradient-card shadow-glow">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <PieChart className="h-4 w-4" />
@@ -236,8 +321,34 @@ export const Reports = () => {
         </Card>
       </div>
 
+      {/* Daily Spending Chart */}
+      <Card className="gradient-card shadow-glow">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="h-4 w-4" />
+            Gastos Diarios del Mes
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={dailySpending}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="day" />
+                <YAxis tickFormatter={(value) => `€${value}`} />
+                <Tooltip 
+                  formatter={(value: number) => [formatCurrency(value), 'Gasto']}
+                  labelStyle={{ color: '#000' }}
+                />
+                <Bar dataKey="gastos" fill="#3b82f6" name="Gastos" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Category Details */}
-      <Card>
+      <Card className="gradient-card shadow-glow">
         <CardHeader>
           <CardTitle>Desglose Detallado por Categorías</CardTitle>
         </CardHeader>
@@ -250,7 +361,7 @@ export const Reports = () => {
           ) : (
             <div className="space-y-3">
               {categoryBreakdown.map((item, index) => (
-                <div key={item.category} className="flex items-center justify-between p-3 rounded-lg border">
+                <div key={item.category} className="flex items-center justify-between p-3 rounded-lg border hover:shadow-sm transition-shadow">
                   <div className="flex items-center gap-3">
                     <div 
                       className="w-4 h-4 rounded-full" 

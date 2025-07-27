@@ -1,42 +1,63 @@
 import { useState, useEffect, useCallback } from 'react'
 import { blink } from '../blink/client'
-import { Transaction, Card, SavingsGoal, FinanceStats, ReportPeriod } from '../types/finance'
+import { Transaction, Card, SavingsGoal, FinanceStats, ReportPeriod, MonthlyExpense, SavingsAssistant } from '../types/finance'
 import { toast } from 'react-hot-toast'
 
 export const useFinance = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [cards, setCards] = useState<Card[]>([])
   const [savingsGoals, setSavingsGoals] = useState<SavingsGoal[]>([])
+  const [monthlyExpenses, setMonthlyExpenses] = useState<MonthlyExpense[]>([])
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<any>(null)
 
   const loadData = useCallback(async () => {
-    if (!user?.id) return
+    if (!user?.id) {
+      setLoading(false)
+      return
+    }
     
     try {
       setLoading(true)
-      const [transactionsData, cardsData, savingsGoalsData] = await Promise.all([
+      
+      // Verificar que el usuario esté autenticado
+      const authState = await blink.auth.getState()
+      if (!authState.user) {
+        console.log('Usuario no autenticado')
+        setLoading(false)
+        return
+      }
+      
+      const [transactionsData, cardsData, savingsGoalsData, monthlyExpensesData] = await Promise.all([
         blink.db.transactions.list({
           where: { userId: user.id },
           orderBy: { createdAt: 'desc' },
           limit: 100
-        }),
+        }).catch(() => []),
         blink.db.cards.list({
           where: { userId: user.id },
           orderBy: { createdAt: 'desc' }
-        }),
+        }).catch(() => []),
         blink.db.savingsGoals.list({
           where: { userId: user.id },
           orderBy: { createdAt: 'desc' }
-        })
+        }).catch(() => []),
+        blink.db.monthlyExpenses.list({
+          where: { userId: user.id },
+          orderBy: { createdAt: 'desc' }
+        }).catch(() => [])
       ])
       
       setTransactions(transactionsData || [])
       setCards(cardsData || [])
       setSavingsGoals(savingsGoalsData || [])
+      setMonthlyExpenses(monthlyExpensesData || [])
     } catch (error) {
       console.error('Error loading data:', error)
-      toast.error('Error al cargar los datos')
+      // No mostrar toast de error si es un problema de autenticación
+      if (error.message !== 'User not authenticated') {
+        toast.error('Error al cargar los datos')
+      }
     } finally {
       setLoading(false)
     }
@@ -44,16 +65,22 @@ export const useFinance = () => {
 
   useEffect(() => {
     const unsubscribe = blink.auth.onAuthStateChanged((state) => {
+      console.log('Auth state changed:', state)
       setUser(state.user)
+      setLoading(state.isLoading)
+      
       if (state.user && !state.isLoading) {
         loadData()
+      } else if (!state.user && !state.isLoading) {
+        // Usuario no autenticado, limpiar datos
+        setTransactions([])
+        setCards([])
+        setSavingsGoals([])
+        setMonthlyExpenses([])
       }
-      setLoading(state.isLoading)
     })
     return unsubscribe
   }, [loadData])
-
-
 
   const addTransaction = async (transaction: Omit<Transaction, 'id' | 'userId' | 'createdAt'>) => {
     try {
@@ -155,6 +182,104 @@ export const useFinance = () => {
     }
   }
 
+  // Nuevas funciones para gastos mensuales
+  const addMonthlyExpense = async (expense: Omit<MonthlyExpense, 'id' | 'userId' | 'createdAt'>) => {
+    try {
+      const newExpense = await blink.db.monthlyExpenses.create({
+        ...expense,
+        userId: user.id,
+        createdAt: new Date().toISOString()
+      })
+      
+      setMonthlyExpenses(prev => [...prev, newExpense])
+      toast.success('Gasto mensual agregado correctamente')
+      return newExpense
+    } catch (error) {
+      console.error('Error adding monthly expense:', error)
+      toast.error('Error al agregar el gasto mensual')
+      throw error
+    }
+  }
+
+  const updateMonthlyExpense = async (id: string, updates: Partial<MonthlyExpense>) => {
+    try {
+      await blink.db.monthlyExpenses.update(id, updates)
+      setMonthlyExpenses(prev => prev.map(e => e.id === id ? { ...e, ...updates } : e))
+      toast.success('Gasto mensual actualizado')
+    } catch (error) {
+      console.error('Error updating monthly expense:', error)
+      toast.error('Error al actualizar el gasto mensual')
+    }
+  }
+
+  const deleteMonthlyExpense = async (id: string) => {
+    try {
+      await blink.db.monthlyExpenses.delete(id)
+      setMonthlyExpenses(prev => prev.filter(e => e.id !== id))
+      toast.success('Gasto mensual eliminado')
+    } catch (error) {
+      console.error('Error deleting monthly expense:', error)
+      toast.error('Error al eliminar el gasto mensual')
+    }
+  }
+
+  // Función para obtener gastos mensuales del mes actual
+  const getCurrentMonthExpenses = () => {
+    const now = new Date()
+    const currentDay = now.getDate()
+    
+    return monthlyExpenses
+      .filter(expense => expense.isActive && expense.dayOfMonth <= currentDay)
+      .reduce((total, expense) => total + expense.amount, 0)
+  }
+
+  // Función para obtener el asistente de ahorro
+  const getSavingsAssistant = (): SavingsAssistant => {
+    const stats = getStats('monthly')
+    const currentSavings = savingsGoals.reduce((sum, goal) => sum + goal.currentAmount, 0)
+    const monthlyIncome = stats.monthlyIncome
+    const monthlyExpenses = stats.monthlyExpenses + getCurrentMonthExpenses()
+    
+    // Calcular presupuesto diario
+    const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate()
+    const dailyBudget = (monthlyIncome - monthlyExpenses) / daysInMonth
+    
+    // Calcular ahorro proyectado
+    const projectedSavings = monthlyIncome - monthlyExpenses
+    
+    // Generar recomendaciones
+    const recommendations: string[] = []
+    const alerts: string[] = []
+    
+    if (projectedSavings < 0) {
+      alerts.push('⚠️ Tu gasto mensual supera tus ingresos')
+      recommendations.push('Revisa tus gastos no esenciales')
+      recommendations.push('Considera reducir gastos en entretenimiento')
+    } else if (projectedSavings < 200) {
+      alerts.push('⚠️ Tu ahorro mensual es bajo')
+      recommendations.push('Busca formas de aumentar tus ingresos')
+      recommendations.push('Optimiza tus gastos fijos')
+    } else {
+      recommendations.push('¡Excelente! Mantén tu disciplina financiera')
+      recommendations.push('Considera invertir parte de tus ahorros')
+    }
+    
+    if (dailyBudget < 20) {
+      alerts.push('⚠️ Tu presupuesto diario es muy bajo')
+      recommendations.push('Revisa gastos recurrentes innecesarios')
+    }
+    
+    return {
+      monthlyGoal: 500, // Meta mensual por defecto
+      currentSavings: currentSavings,
+      projectedSavings: projectedSavings,
+      recommendations,
+      alerts,
+      spendingLimit: monthlyExpenses,
+      dailyBudget: Math.max(0, dailyBudget)
+    }
+  }
+
   const getStats = (period: ReportPeriod = 'monthly'): FinanceStats => {
     const now = new Date()
     let startDate: Date
@@ -239,6 +364,7 @@ export const useFinance = () => {
     transactions,
     cards,
     savingsGoals,
+    monthlyExpenses,
     loading,
     user,
     addTransaction,
@@ -248,6 +374,11 @@ export const useFinance = () => {
     addSavingsGoal,
     updateSavingsGoal,
     deleteSavingsGoal,
+    addMonthlyExpense,
+    updateMonthlyExpense,
+    deleteMonthlyExpense,
+    getCurrentMonthExpenses,
+    getSavingsAssistant,
     getStats,
     loadData
   }
