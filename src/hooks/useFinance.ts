@@ -65,54 +65,62 @@ export const useFinance = () => {
         monthlyExpenses: monthlyExpensesResult.data?.length || 0
       })
       
+      // Debug: mostrar datos crudos de tarjetas
+      if (cardsResult.data && cardsResult.data.length > 0) {
+        console.log('🔍 Raw cards data from Supabase:', cardsResult.data)
+      }
+      
       if (transactionsResult.error) console.error('Error loading transactions:', transactionsResult.error)
       if (cardsResult.error) console.error('Error loading cards:', cardsResult.error)
       if (savingsGoalsResult.error) console.error('Error loading savings goals:', savingsGoalsResult.error)
       if (monthlyExpensesResult.error) console.error('Error loading monthly expenses:', monthlyExpensesResult.error)
       
-      // Convertir datos de snake_case a camelCase
+      // Convertir datos de snake_case a camelCase con manejo seguro de tipos
       const convertedTransactions = (transactionsResult.data || []).map(t => ({
-        id: t.id,
-        description: t.description,
-        amount: t.amount,
-        type: t.type,
-        category: t.category,
-        cardId: t.card_id,
-        grossAmount: t.gross_amount,
-        userId: t.user_id,
-        createdAt: t.created_at
+        id: t.id || '',
+        description: t.description || '',
+        amount: Number(t.amount) || 0,
+        type: t.type || 'expense',
+        category: t.category || 'otros',
+        cardId: t.card_id || null,
+        grossAmount: Number(t.gross_amount) || 0,
+        userId: t.user_id || '',
+        createdAt: t.created_at || new Date().toISOString()
       }))
       
       const convertedCards = (cardsResult.data || []).map(c => ({
-        id: c.id,
-        name: c.name,
-        type: c.type,
-        lastFourDigits: c.last_four_digits,
-        limit: c.limit_amount,
-        userId: c.user_id,
-        createdAt: c.created_at
+        id: c.id || '',
+        name: c.name || '',
+        type: c.type || 'credit',
+        lastFourDigits: c.last_four_digits || '',
+        limit: Number(c.limit_amount) || 0,
+        userId: c.user_id || '',
+        createdAt: c.created_at || new Date().toISOString()
       }))
       
       const convertedSavingsGoals = (savingsGoalsResult.data || []).map(s => ({
-        id: s.id,
-        name: s.name,
-        targetAmount: s.target_amount,
-        currentAmount: s.current_amount,
-        targetDate: s.target_date,
-        userId: s.user_id,
-        createdAt: s.created_at
+        id: s.id || '',
+        name: s.name || '',
+        targetAmount: Number(s.target_amount) || 0,
+        currentAmount: Number(s.current_amount) || 0,
+        targetDate: s.target_date || null,
+        userId: s.user_id || '',
+        createdAt: s.created_at || new Date().toISOString()
       }))
       
       const convertedMonthlyExpenses = (monthlyExpensesResult.data || []).map(m => ({
-        id: m.id,
-        name: m.name,
-        amount: m.amount,
-        category: m.category,
-        dayOfMonth: m.day_of_month,
-        isActive: m.is_active,
-        userId: m.user_id,
-        createdAt: m.created_at
+        id: m.id || '',
+        name: m.name || '',
+        amount: Number(m.amount) || 0,
+        category: m.category || 'otros',
+        dayOfMonth: Number(m.day_of_month) || 1,
+        isActive: Boolean(m.is_active),
+        userId: m.user_id || '',
+        createdAt: m.created_at || new Date().toISOString()
       }))
+      
+      // Debug: mostrar datos convertidos
+      console.log('🔍 Converted cards data:', convertedCards)
       
       setTransactions(convertedTransactions)
       setCards(convertedCards)
