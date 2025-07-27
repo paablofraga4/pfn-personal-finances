@@ -248,7 +248,13 @@ export const useFinance = () => {
       
       // Actualizar el balance de la tarjeta si se especificó una
       if (transaction.cardId) {
+        console.log('🔄 Updating card balance for transaction')
+        console.log('Card ID:', transaction.cardId)
+        console.log('Amount:', transaction.amount)
+        console.log('Type:', transaction.type)
         await updateCardBalance(transaction.cardId, transaction.amount, transaction.type)
+      } else {
+        console.log('⚠️ No card specified for transaction')
       }
       
       toast.success('Transacción agregada correctamente')

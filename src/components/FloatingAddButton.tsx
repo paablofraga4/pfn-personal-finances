@@ -22,7 +22,13 @@ export const FloatingAddButton = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!amount || !description || !category) return
+    console.log('🔄 FloatingAddButton - handleSubmit llamado')
+    console.log('🔄 FloatingAddButton - Valores:', { amount, description, category, type, cardId })
+    
+    if (!amount || !description || !category) {
+      console.log('❌ FloatingAddButton - Campos requeridos faltantes')
+      return
+    }
 
     setLoading(true)
     try {
@@ -36,6 +42,7 @@ export const FloatingAddButton = () => {
         date: new Date().toISOString()
       })
       
+      console.log('🔄 FloatingAddButton - Llamando a addTransaction...')
       const result = await addTransaction({
         amount: parseFloat(amount),
         grossAmount: grossAmount ? parseFloat(grossAmount) : undefined,
@@ -46,7 +53,7 @@ export const FloatingAddButton = () => {
         date: new Date().toISOString()
       })
       
-      console.log('✅ FloatingAddButton - Transacción agregada:', result)
+      console.log('✅ FloatingAddButton - Transacción agregada exitosamente:', result)
       
       // Reset form
       setAmount('')
