@@ -173,6 +173,7 @@ export const useFinance = () => {
       
       const newCard = await blink.db.cards.create({
         ...card,
+        limit: card.limit,
         limitAmount: card.limit,
         userId: user.id,
         createdAt: new Date().toISOString()
