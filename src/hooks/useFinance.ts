@@ -203,49 +203,82 @@ export const useFinance = () => {
       // Verificar que la tabla existe
       console.log('Checking if cards table exists...')
       
-      // Crear datos mínimos para evitar conflictos
-      const cardData = {
-        name: card.name,
-        type: card.type,
-        lastFourDigits: card.lastFourDigits,
-        color: card.color,
-        balance: card.balance,
-        userId: user.id,
-        createdAt: new Date().toISOString()
-      }
-      
-      try {
-        console.log('📤 Sending card data to database:', cardData)
-        
-        const newCard = await blink.db.cards.create(cardData)
-        
-        console.log('✅ Card created successfully:', newCard)
-        console.log('Previous cards count:', cards.length)
-        setCards(prev => {
-          const newList = [...prev, newCard]
-          console.log('New cards count:', newList.length)
-          return newList
-        })
-        
-        toast.success('Tarjeta agregada correctamente')
-        return newCard
-      } catch (dbError) {
-        console.error('❌ Database error, using local fallback:', dbError)
-        
-        // Fallback local si la base de datos falla
-        const tempId = `temp_card_${Date.now()}`
-        const localCard = {
-          id: tempId,
-          ...cardData,
+      // Intentar diferentes estructuras de datos para la BD
+      const cardDataAttempts = [
+        // Intento 1: Datos mínimos
+        {
+          name: card.name,
+          type: card.type,
+          lastFourDigits: card.lastFourDigits,
+          color: card.color,
+          balance: card.balance,
+          userId: user.id,
+          createdAt: new Date().toISOString()
+        },
+        // Intento 2: Con limitAmount
+        {
+          name: card.name,
+          type: card.type,
+          lastFourDigits: card.lastFourDigits,
+          color: card.color,
+          balance: card.balance,
+          limitAmount: card.limit || 0,
+          userId: user.id,
+          createdAt: new Date().toISOString()
+        },
+        // Intento 3: Con limit
+        {
+          name: card.name,
+          type: card.type,
+          lastFourDigits: card.lastFourDigits,
+          color: card.color,
+          balance: card.balance,
           limit: card.limit || 0,
-          purpose: card.purpose || 'otros'
+          userId: user.id,
+          createdAt: new Date().toISOString()
         }
-        
-        console.log('✅ Card created locally:', localCard)
-        setCards(prev => [localCard, ...prev])
-        
-        toast.success('Tarjeta agregada (guardada localmente)')
-        return localCard
+      ]
+      
+      console.log('🔍 Attempting to create card with different data structures...')
+      
+      for (let i = 0; i < cardDataAttempts.length; i++) {
+        try {
+          console.log(`📤 Attempt ${i + 1}:`, cardDataAttempts[i])
+          
+          const newCard = await blink.db.cards.create(cardDataAttempts[i])
+          
+          console.log('✅ Card created successfully:', newCard)
+          console.log('Previous cards count:', cards.length)
+          setCards(prev => {
+            const newList = [...prev, newCard]
+            console.log('New cards count:', newList.length)
+            return newList
+          })
+          
+          toast.success('Tarjeta agregada correctamente')
+          return newCard
+        } catch (dbError) {
+          console.error(`❌ Attempt ${i + 1} failed:`, dbError.message)
+          
+          // Si es el último intento, usar fallback local
+          if (i === cardDataAttempts.length - 1) {
+            console.error('❌ All database attempts failed, using local fallback')
+            
+            const tempId = `temp_card_${Date.now()}`
+            const localCard = {
+              id: tempId,
+              ...cardDataAttempts[0],
+              limit: card.limit || 0,
+              purpose: card.purpose || 'otros'
+            }
+            
+            console.log('✅ Card created locally:', localCard)
+            setCards(prev => [localCard, ...prev])
+            
+            toast.success('Tarjeta agregada (guardada localmente)')
+            return localCard
+          }
+        }
       }
     } catch (error) {
       console.error('Error adding card:', error)
@@ -331,22 +364,78 @@ export const useFinance = () => {
   const addMonthlyExpense = async (expense: Omit<MonthlyExpense, 'id' | 'userId' | 'createdAt'>) => {
     try {
       console.log('=== ADDING MONTHLY EXPENSE ===')
-      console.log('⚠️ WARNING: Monthly expenses table does not exist, using local storage fallback')
       
-      // Crear un ID temporal
-      const tempId = `temp_${Date.now()}`
-      const newExpense = {
-        id: tempId,
-        ...expense,
-        userId: user.id,
-        createdAt: new Date().toISOString()
+      // Intentar diferentes estructuras para monthly expenses
+      const expenseDataAttempts = [
+        // Intento 1: Datos básicos
+        {
+          name: expense.name,
+          amount: expense.amount,
+          category: expense.category,
+          dayOfMonth: expense.dayOfMonth,
+          isActive: expense.isActive,
+          userId: user.id,
+          createdAt: new Date().toISOString()
+        },
+        // Intento 2: Con cardId
+        {
+          name: expense.name,
+          amount: expense.amount,
+          category: expense.category,
+          dayOfMonth: expense.dayOfMonth,
+          isActive: expense.isActive,
+          cardId: expense.cardId,
+          userId: user.id,
+          createdAt: new Date().toISOString()
+        },
+        // Intento 3: Con description
+        {
+          name: expense.name,
+          amount: expense.amount,
+          category: expense.category,
+          dayOfMonth: expense.dayOfMonth,
+          isActive: expense.isActive,
+          cardId: expense.cardId,
+          description: expense.description,
+          userId: user.id,
+          createdAt: new Date().toISOString()
+        }
+      ]
+      
+      console.log('🔍 Attempting to create monthly expense with different data structures...')
+      
+      for (let i = 0; i < expenseDataAttempts.length; i++) {
+        try {
+          console.log(`📤 Attempt ${i + 1}:`, expenseDataAttempts[i])
+          
+          const newExpense = await blink.db.monthlyExpenses.create(expenseDataAttempts[i])
+          
+          console.log('✅ Monthly expense created successfully:', newExpense)
+          setMonthlyExpenses(prev => [newExpense, ...prev])
+          
+          toast.success('Gasto mensual agregado correctamente')
+          return newExpense
+        } catch (dbError) {
+          console.error(`❌ Attempt ${i + 1} failed:`, dbError.message)
+          
+          // Si es el último intento, usar fallback local
+          if (i === expenseDataAttempts.length - 1) {
+            console.error('❌ All database attempts failed, using local fallback')
+            
+            const tempId = `temp_${Date.now()}`
+            const localExpense = {
+              id: tempId,
+              ...expenseDataAttempts[0]
+            }
+            
+            console.log('✅ Monthly expense created locally:', localExpense)
+            setMonthlyExpenses(prev => [localExpense, ...prev])
+            
+            toast.success('Gasto mensual agregado (guardado localmente)')
+            return localExpense
+          }
+        }
       }
-      
-      console.log('✅ Monthly expense created locally:', newExpense)
-      setMonthlyExpenses(prev => [newExpense, ...prev])
-      
-      toast.success('Gasto mensual agregado (guardado localmente)')
-      return newExpense
     } catch (error) {
       console.error('Error adding monthly expense:', error)
       toast.error('Error al agregar el gasto mensual')
