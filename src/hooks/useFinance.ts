@@ -78,6 +78,7 @@ export const useFinance = () => {
       } finally {
         setLoading(false)
       }
+    }
   }, [user?.id])
 
   useEffect(() => {
