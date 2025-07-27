@@ -54,6 +54,22 @@ export const Login = () => {
                 'Iniciar sesión con Google'
               )}
             </Button>
+            
+            <Button 
+              onClick={async () => {
+                try {
+                  await blink.auth.signOut()
+                  toast.success('Sesión cerrada')
+                } catch (error) {
+                  console.error('Error signing out:', error)
+                  toast.error('Error al cerrar sesión')
+                }
+              }}
+              variant="outline"
+              className="w-full h-12"
+            >
+              Cerrar Sesión (Debug)
+            </Button>
           </div>
         </CardContent>
       </Card>

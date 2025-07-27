@@ -101,20 +101,27 @@ export const useFinance = () => {
 
   useEffect(() => {
     const unsubscribe = blink.auth.onAuthStateChanged((state) => {
-      console.log('Auth state changed:', state)
+      console.log('=== AUTH STATE CHANGED ===')
+      console.log('State:', state)
+      console.log('User:', state.user)
+      console.log('IsLoading:', state.isLoading)
+      console.log('User ID:', state.user?.id)
+      
       setUser(state.user)
       setLoading(state.isLoading)
       
       if (state.user && !state.isLoading) {
-        console.log('User authenticated, loading data...')
+        console.log('✅ User authenticated, loading data...')
         loadData()
       } else if (!state.user && !state.isLoading) {
-        console.log('User not authenticated, clearing data...')
+        console.log('❌ User not authenticated, clearing data...')
         // Usuario no autenticado, limpiar datos
         setTransactions([])
         setCards([])
         setSavingsGoals([])
         setMonthlyExpenses([])
+      } else {
+        console.log('⏳ Still loading or in transition...')
       }
     })
     return unsubscribe
@@ -122,7 +129,10 @@ export const useFinance = () => {
 
   const addTransaction = async (transaction: Omit<Transaction, 'id' | 'userId' | 'createdAt'>) => {
     try {
-      console.log('Adding transaction:', { ...transaction, userId: user.id })
+      console.log('=== ADDING TRANSACTION ===')
+      console.log('Transaction data:', { ...transaction, userId: user.id })
+      console.log('User ID:', user?.id)
+      console.log('User object:', user)
       
       // Verificar que la tabla existe
       console.log('Checking if transactions table exists...')
@@ -134,8 +144,29 @@ export const useFinance = () => {
         createdAt: new Date().toISOString()
       })
       
-      console.log('Transaction created successfully:', newTransaction)
-      setTransactions(prev => [newTransaction, ...prev])
+      console.log('✅ Transaction created successfully:', newTransaction)
+      console.log('Previous transactions count:', transactions.length)
+      setTransactions(prev => {
+        const newList = [newTransaction, ...prev]
+        console.log('New transactions count:', newList.length)
+        return newList
+      })
+      
+      // Verificar que se guardó correctamente
+      setTimeout(async () => {
+        try {
+          console.log('🔍 Verificando que la transacción se guardó...')
+          const savedTransactions = await blink.db.transactions.list({
+            where: { userId: user.id },
+            orderBy: { createdAt: 'desc' },
+            limit: 5
+          })
+          console.log('📊 Transacciones guardadas:', savedTransactions)
+        } catch (error) {
+          console.error('❌ Error verificando transacciones:', error)
+        }
+      }, 1000)
+      
       toast.success('Transacción agregada correctamente')
       return newTransaction
     } catch (error) {
@@ -231,7 +262,10 @@ export const useFinance = () => {
   // Nuevas funciones para gastos mensuales
   const addMonthlyExpense = async (expense: Omit<MonthlyExpense, 'id' | 'userId' | 'createdAt'>) => {
     try {
-      console.log('Adding monthly expense:', { ...expense, userId: user.id })
+      console.log('=== ADDING MONTHLY EXPENSE ===')
+      console.log('Expense data:', { ...expense, userId: user.id })
+      console.log('User ID:', user?.id)
+      console.log('User object:', user)
       
       // Verificar que la tabla existe
       console.log('Checking if monthlyExpenses table exists...')
@@ -242,8 +276,13 @@ export const useFinance = () => {
         createdAt: new Date().toISOString()
       })
       
-      console.log('Monthly expense created successfully:', newExpense)
-      setMonthlyExpenses(prev => [...prev, newExpense])
+      console.log('✅ Monthly expense created successfully:', newExpense)
+      console.log('Previous monthly expenses count:', monthlyExpenses.length)
+      setMonthlyExpenses(prev => {
+        const newList = [...prev, newExpense]
+        console.log('New monthly expenses count:', newList.length)
+        return newList
+      })
       toast.success('Gasto mensual agregado correctamente')
       return newExpense
     } catch (error) {
