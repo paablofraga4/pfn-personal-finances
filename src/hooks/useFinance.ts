@@ -18,66 +18,64 @@ export const useFinance = () => {
       return
     }
     
+    setLoading(true)
+    
+    console.log('Loading data for user:', user.id)
+    
+    // Verificar el estado de autenticación - usar el estado actual en lugar de getState()
+    console.log('Auth state from context:', { user, loading })
+    
+    if (!user) {
+      console.log('Usuario no autenticado')
+      setLoading(false)
+      return
+    }
+    
+    console.log('User is authenticated, loading data...')
+    
+    // Cargar datos directamente sin verificación adicional
+    console.log('Loading data directly...')
+    
     try {
-      setLoading(true)
+      const [transactionsData, cardsData, savingsGoalsData, monthlyExpensesData] = await Promise.all([
+        blink.db.transactions.list({
+          where: { userId: user.id },
+          orderBy: { createdAt: 'desc' },
+          limit: 100
+        }).catch(() => []),
+        blink.db.cards.list({
+          where: { userId: user.id },
+          orderBy: { createdAt: 'desc' }
+        }).catch(() => []),
+        blink.db.savingsGoals.list({
+          where: { userId: user.id },
+          orderBy: { createdAt: 'desc' }
+        }).catch(() => []),
+        blink.db.monthlyExpenses.list({
+          where: { userId: user.id },
+          orderBy: { createdAt: 'desc' }
+        }).catch(() => [])
+      ])
       
-      console.log('Loading data for user:', user.id)
+      console.log('Data loaded:', {
+        transactions: transactionsData?.length || 0,
+        cards: cardsData?.length || 0,
+        savingsGoals: savingsGoalsData?.length || 0,
+        monthlyExpenses: monthlyExpensesData?.length || 0
+      })
       
-      // Verificar el estado de autenticación - usar el estado actual en lugar de getState()
-      console.log('Auth state from context:', { user, loading })
-      
-      if (!user) {
-        console.log('Usuario no autenticado')
-        setLoading(false)
-        return
+      setTransactions(transactionsData || [])
+      setCards(cardsData || [])
+      setSavingsGoals(savingsGoalsData || [])
+      setMonthlyExpenses(monthlyExpensesData || [])
+    } catch (error) {
+      console.error('Error loading data:', error)
+      // En producción, no mostrar errores de red
+      if (process.env.NODE_ENV === 'development') {
+        toast.error('Error al cargar los datos')
       }
-      
-      console.log('User is authenticated, loading data...')
-      
-      // Cargar datos directamente sin verificación adicional
-      console.log('Loading data directly...')
-      
-      try {
-        const [transactionsData, cardsData, savingsGoalsData, monthlyExpensesData] = await Promise.all([
-          blink.db.transactions.list({
-            where: { userId: user.id },
-            orderBy: { createdAt: 'desc' },
-            limit: 100
-          }).catch(() => []),
-          blink.db.cards.list({
-            where: { userId: user.id },
-            orderBy: { createdAt: 'desc' }
-          }).catch(() => []),
-          blink.db.savingsGoals.list({
-            where: { userId: user.id },
-            orderBy: { createdAt: 'desc' }
-          }).catch(() => []),
-          blink.db.monthlyExpenses.list({
-            where: { userId: user.id },
-            orderBy: { createdAt: 'desc' }
-          }).catch(() => [])
-        ])
-        
-        console.log('Data loaded:', {
-          transactions: transactionsData?.length || 0,
-          cards: cardsData?.length || 0,
-          savingsGoals: savingsGoalsData?.length || 0,
-          monthlyExpenses: monthlyExpensesData?.length || 0
-        })
-        
-        setTransactions(transactionsData || [])
-        setCards(cardsData || [])
-        setSavingsGoals(savingsGoalsData || [])
-        setMonthlyExpenses(monthlyExpensesData || [])
-      } catch (error) {
-        console.error('Error loading data:', error)
-        // En producción, no mostrar errores de red
-        if (process.env.NODE_ENV === 'development') {
-          toast.error('Error al cargar los datos')
-        }
-      } finally {
-        setLoading(false)
-      }
+    } finally {
+      setLoading(false)
     }
   }, [user?.id])
 
