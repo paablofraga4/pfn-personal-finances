@@ -240,10 +240,16 @@ export const useFinance = () => {
         cardId: newTransaction.card_id,
         grossAmount: newTransaction.gross_amount,
         userId: newTransaction.user_id,
-        createdAt: newTransaction.created_at
+        createdAt: newTransaction.created_at,
+        date: newTransaction.date
       }
       
       setTransactions(prev => [convertedTransaction, ...prev])
+      
+      // Actualizar el balance de la tarjeta si se especificó una
+      if (transaction.cardId) {
+        await updateCardBalance(transaction.cardId, transaction.amount, transaction.type)
+      }
       
       toast.success('Transacción agregada correctamente')
       return convertedTransaction
@@ -339,12 +345,75 @@ export const useFinance = () => {
       
       console.log('✅ Transaction deleted successfully from database')
       
+      // Restaurar el balance de la tarjeta si la transacción tenía una tarjeta asociada
+      const deletedTransaction = transactions.find(t => t.id === id)
+      if (deletedTransaction?.cardId) {
+        // Revertir el cambio en el balance
+        const reversedAmount = deletedTransaction.type === 'income' ? -deletedTransaction.amount : deletedTransaction.amount
+        await updateCardBalance(deletedTransaction.cardId, Math.abs(reversedAmount), reversedAmount > 0 ? 'income' : 'expense')
+      }
+      
       // Actualizar estado local
       setTransactions(prev => prev.filter(t => t.id !== id))
       toast.success('Transacción eliminada correctamente')
     } catch (error) {
       console.error('Error deleting transaction:', error)
       toast.error('Error al eliminar la transacción')
+    }
+  }
+
+  const updateCardBalance = async (cardId: string, amount: number, transactionType: 'income' | 'expense') => {
+    try {
+      console.log('=== UPDATING CARD BALANCE ===')
+      console.log('Card ID:', cardId)
+      console.log('Amount:', amount)
+      console.log('Transaction Type:', transactionType)
+      
+      // Obtener la tarjeta actual
+      const currentCard = cards.find(c => c.id === cardId)
+      if (!currentCard) {
+        console.error('❌ Card not found:', cardId)
+        return
+      }
+      
+      // Calcular el nuevo balance
+      let newBalance = currentCard.balance
+      if (transactionType === 'income') {
+        newBalance += amount
+        console.log('💰 Adding income to card balance')
+      } else {
+        newBalance -= amount
+        console.log('💸 Subtracting expense from card balance')
+      }
+      
+      console.log('Old balance:', currentCard.balance)
+      console.log('New balance:', newBalance)
+      
+      // Actualizar en Supabase
+      const { error } = await supabase
+        .from('cards')
+        .update({ balance: newBalance })
+        .eq('id', cardId)
+      
+      if (error) {
+        console.error('❌ Error updating card balance in database:', error)
+        toast.error('Error al actualizar el balance de la tarjeta')
+        return
+      }
+      
+      console.log('✅ Card balance updated successfully in database')
+      
+      // Actualizar en el estado local
+      setCards(prev => prev.map(c => 
+        c.id === cardId 
+          ? { ...c, balance: newBalance }
+          : c
+      ))
+      
+      toast.success('Balance de tarjeta actualizado')
+    } catch (error) {
+      console.error('Error updating card balance:', error)
+      toast.error('Error al actualizar el balance de la tarjeta')
     }
   }
 
@@ -433,6 +502,7 @@ export const useFinance = () => {
         name: expense.name,
         amount: expense.amount,
         category: expense.category,
+        card_id: expense.cardId,
         day_of_month: expense.dayOfMonth,
         is_active: expense.isActive,
         user_id: user.id,
@@ -462,6 +532,7 @@ export const useFinance = () => {
         name: newExpense.name,
         amount: newExpense.amount,
         category: newExpense.category,
+        cardId: newExpense.card_id,
         dayOfMonth: newExpense.day_of_month,
         isActive: newExpense.is_active,
         userId: newExpense.user_id,
@@ -469,6 +540,11 @@ export const useFinance = () => {
       }
       
       setMonthlyExpenses(prev => [convertedExpense, ...prev])
+      
+      // Actualizar el balance de la tarjeta si se especificó una
+      if (expense.cardId) {
+        await updateCardBalance(expense.cardId, expense.amount, 'expense')
+      }
       
       toast.success('Gasto mensual agregado correctamente')
       return convertedExpense
