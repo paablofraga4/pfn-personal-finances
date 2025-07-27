@@ -8,10 +8,14 @@
         // Extraer el token de la URL
         const urlParams = new URLSearchParams(window.location.hash.substring(1));
         const accessToken = urlParams.get('access_token');
+        const refreshToken = urlParams.get('refresh_token');
         
         if (accessToken) {
-            // Guardar el token en localStorage
+            // Guardar los tokens en localStorage
             localStorage.setItem('supabase.auth.token', accessToken);
+            if (refreshToken) {
+                localStorage.setItem('supabase.auth.refresh_token', refreshToken);
+            }
             
             // Redirigir a la aplicación principal
             window.location.href = '/';
