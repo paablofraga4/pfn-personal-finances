@@ -28,7 +28,12 @@ export const useFinance = () => {
         return
       }
       
-      const [transactionsData, cardsData, savingsGoalsData, monthlyExpensesData] = await Promise.all([
+      // Agregar timeout para evitar bloqueos
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout')), 10000)
+      )
+      
+      const dataPromise = Promise.all([
         blink.db.transactions.list({
           where: { userId: user.id },
           orderBy: { createdAt: 'desc' },
@@ -48,14 +53,19 @@ export const useFinance = () => {
         }).catch(() => [])
       ])
       
+      const [transactionsData, cardsData, savingsGoalsData, monthlyExpensesData] = await Promise.race([
+        dataPromise,
+        timeoutPromise
+      ])
+      
       setTransactions(transactionsData || [])
       setCards(cardsData || [])
       setSavingsGoals(savingsGoalsData || [])
       setMonthlyExpenses(monthlyExpensesData || [])
     } catch (error) {
       console.error('Error loading data:', error)
-      // No mostrar toast de error si es un problema de autenticación
-      if (error.message !== 'User not authenticated') {
+      // En producción, no mostrar errores de red
+      if (process.env.NODE_ENV === 'development') {
         toast.error('Error al cargar los datos')
       }
     } finally {
