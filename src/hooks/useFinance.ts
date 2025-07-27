@@ -33,6 +33,30 @@ export const useFinance = () => {
     
     console.log('User is authenticated, loading data...')
     
+    // Verificar qué tablas existen
+    console.log('🔍 Checking available tables...')
+    try {
+      // Intentar cargar una pequeña cantidad de cada tabla para verificar si existen
+      const testQueries = [
+        blink.db.transactions.list({ limit: 1 }).catch(e => ({ error: 'transactions', message: e.message })),
+        blink.db.cards.list({ limit: 1 }).catch(e => ({ error: 'cards', message: e.message })),
+        blink.db.savingsGoals.list({ limit: 1 }).catch(e => ({ error: 'savingsGoals', message: e.message })),
+        blink.db.monthlyExpenses.list({ limit: 1 }).catch(e => ({ error: 'monthlyExpenses', message: e.message }))
+      ]
+      
+      const testResults = await Promise.all(testQueries)
+      console.log('📊 Table availability check:', testResults.map((result, index) => {
+        const tableNames = ['transactions', 'cards', 'savingsGoals', 'monthlyExpenses']
+        if ('error' in result) {
+          return `${tableNames[index]}: ❌ ${result.message}`
+        } else {
+          return `${tableNames[index]}: ✅ Available`
+        }
+      }))
+    } catch (error) {
+      console.error('Error checking tables:', error)
+    }
+    
     // Cargar datos directamente sin verificación adicional
     console.log('Loading data directly...')
     
