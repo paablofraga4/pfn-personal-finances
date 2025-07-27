@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Redirigiendo...</title>
+</head>
+<body>
+    <script>
+        // Extraer el token de la URL
+        const urlParams = new URLSearchParams(window.location.hash.substring(1));
+        const accessToken = urlParams.get('access_token');
+        
+        if (accessToken) {
+            // Guardar el token en localStorage
+            localStorage.setItem('supabase.auth.token', accessToken);
+            
+            // Redirigir a la aplicación principal
+            window.location.href = '/';
+        } else {
+            // Si no hay token, redirigir al login
+            window.location.href = '/';
+        }
+    </script>
+    <p>Redirigiendo...</p>
+</body>
+</html> 
