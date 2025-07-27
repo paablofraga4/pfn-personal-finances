@@ -13,6 +13,7 @@ export const useFinance = () => {
 
   const loadData = useCallback(async () => {
     if (!user?.id) {
+      console.log('No user ID available')
       setLoading(false)
       return
     }
@@ -28,6 +29,20 @@ export const useFinance = () => {
       
       if (!authState.user) {
         console.log('Usuario no autenticado')
+        setLoading(false)
+        return
+      }
+      
+      console.log('User is authenticated, loading data...')
+      
+      // Test de conexión a la base de datos
+      try {
+        console.log('Testing database connection...')
+        const testQuery = await blink.db.transactions.list({ limit: 1 })
+        console.log('Database connection successful, test query result:', testQuery)
+      } catch (dbError) {
+        console.error('Database connection failed:', dbError)
+        toast.error('Error de conexión a la base de datos')
         setLoading(false)
         return
       }
@@ -62,6 +77,13 @@ export const useFinance = () => {
         timeoutPromise
       ])
       
+      console.log('Data loaded:', {
+        transactions: transactionsData?.length || 0,
+        cards: cardsData?.length || 0,
+        savingsGoals: savingsGoalsData?.length || 0,
+        monthlyExpenses: monthlyExpensesData?.length || 0
+      })
+      
       setTransactions(transactionsData || [])
       setCards(cardsData || [])
       setSavingsGoals(savingsGoalsData || [])
@@ -84,8 +106,10 @@ export const useFinance = () => {
       setLoading(state.isLoading)
       
       if (state.user && !state.isLoading) {
+        console.log('User authenticated, loading data...')
         loadData()
       } else if (!state.user && !state.isLoading) {
+        console.log('User not authenticated, clearing data...')
         // Usuario no autenticado, limpiar datos
         setTransactions([])
         setCards([])
@@ -99,6 +123,9 @@ export const useFinance = () => {
   const addTransaction = async (transaction: Omit<Transaction, 'id' | 'userId' | 'createdAt'>) => {
     try {
       console.log('Adding transaction:', { ...transaction, userId: user.id })
+      
+      // Verificar que la tabla existe
+      console.log('Checking if transactions table exists...')
       
       const newTransaction = await blink.db.transactions.create({
         ...transaction,
@@ -205,6 +232,9 @@ export const useFinance = () => {
   const addMonthlyExpense = async (expense: Omit<MonthlyExpense, 'id' | 'userId' | 'createdAt'>) => {
     try {
       console.log('Adding monthly expense:', { ...expense, userId: user.id })
+      
+      // Verificar que la tabla existe
+      console.log('Checking if monthlyExpenses table exists...')
       
       const newExpense = await blink.db.monthlyExpenses.create({
         ...expense,
