@@ -68,6 +68,8 @@ export const useFinance = () => {
       // Debug: mostrar datos crudos de tarjetas
       if (cardsResult.data && cardsResult.data.length > 0) {
         console.log('🔍 Raw cards data from Supabase:', cardsResult.data)
+        console.log('🔍 First card limit_amount:', cardsResult.data[0]?.limit_amount)
+        console.log('🔍 First card limit_amount type:', typeof cardsResult.data[0]?.limit_amount)
       }
       
       if (transactionsResult.error) console.error('Error loading transactions:', transactionsResult.error)
@@ -88,15 +90,31 @@ export const useFinance = () => {
         createdAt: t.created_at || new Date().toISOString()
       }))
       
-      const convertedCards = (cardsResult.data || []).map(c => ({
-        id: c.id || '',
-        name: c.name || '',
-        type: c.type || 'credit',
-        lastFourDigits: c.last_four_digits || '',
-        limit: Number(c.limit_amount) || 0,
-        userId: c.user_id || '',
-        createdAt: c.created_at || new Date().toISOString()
-      }))
+      const convertedCards = (cardsResult.data || []).map(c => {
+        console.log('🔍 Converting card:', c)
+        console.log('🔍 Card limit_amount raw:', c.limit_amount)
+        console.log('🔍 Card limit_amount type:', typeof c.limit_amount)
+        console.log('🔍 Card balance raw:', c.balance)
+        console.log('🔍 Card balance type:', typeof c.balance)
+        
+        const convertedCard = {
+          id: c.id || '',
+          name: c.name || '',
+          type: c.type || 'credit',
+          lastFourDigits: c.last_four_digits || '',
+          color: c.color || '#3b82f6',
+          balance: Number(c.balance) || 0,
+          limit: Number(c.limit_amount) || 0,
+          limitAmount: Number(c.limit_amount) || 0,
+          purpose: c.purpose || 'otros',
+          userId: c.user_id || '',
+          createdAt: c.created_at || new Date().toISOString()
+        }
+        
+        console.log('🔍 Converted card balance:', convertedCard.balance)
+        console.log('🔍 Converted card limit:', convertedCard.limit)
+        return convertedCard
+      })
       
       const convertedSavingsGoals = (savingsGoalsResult.data || []).map(s => ({
         id: s.id || '',
@@ -270,8 +288,24 @@ export const useFinance = () => {
       }
       
       console.log('✅ Card created successfully:', newCard)
+      
+      // Convertir de snake_case a camelCase para el frontend
+      const convertedCard = {
+        id: newCard.id,
+        name: newCard.name,
+        type: newCard.type,
+        lastFourDigits: newCard.last_four_digits,
+        color: newCard.color,
+        balance: Number(newCard.balance) || 0,
+        limit: Number(newCard.limit_amount) || 0,
+        limitAmount: Number(newCard.limit_amount) || 0,
+        purpose: newCard.purpose || 'otros',
+        userId: newCard.user_id,
+        createdAt: newCard.created_at
+      }
+      
       setCards(prev => {
-        const newList = [...prev, newCard]
+        const newList = [convertedCard, ...prev]
         console.log('New cards count:', newList.length)
         return newList
       })
